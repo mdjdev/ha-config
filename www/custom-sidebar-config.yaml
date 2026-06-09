@@ -1,0 +1,379 @@
+sidebareditable: false
+analytics: false
+hideall: true
+
+js_variables:
+  group_paths:
+    apps:
+      - /config/apps/installed
+      - _adguard
+      - _zigbee2mqtt
+      - /core_configurator # File editor
+      - _music_assistant
+      - _sqlite-web
+      - _esphome
+      - _ssh # Terminal
+      - _logviewer
+      - _home-assistant-version-control
+      - /entity_manager
+    system:
+      - /config/dashboard
+      - /config/developer-tools
+      - _hassio_google_drive_backup
+      - /history
+      - /logbook
+
+jsrefs:
+  system_group_open: false
+  apps_group_open: false
+
+order:
+
+  - item: Home
+    exact: true
+    hide: false
+
+  - new_item: true
+    item: Geräte & Dienste
+    href: /config/integrations
+    icon: mdi:devices
+
+  - new_item: true
+    item: Automationen
+    href: /config/automation
+    icon: mdi:robot
+
+  - item: HACS
+    exact: true
+    hide: false
+
+  - new_item: true
+    item: apps_group_toggle
+    name: Apps
+    icon: |
+      [[[
+        const open = refs.apps_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.apps.some(
+          (path) => current === path || current.includes(path)
+        );
+        return (open || active) ? 'mdi:chevron-down' : 'mdi:puzzle';
+      ]]]
+    attributes:
+      data-group-item: "true"
+    on_click:
+      action: javascript
+      code: |
+        refs.apps_group_open = !refs.apps_group_open;
+
+  - new_item: true
+    item: Installiert
+    href: /config/apps/installed
+    icon: mdi:puzzle
+    hide: |
+      [[[
+        const open = refs.apps_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.apps.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+
+  - item: AdGuard Home
+    exact: true
+    hide: |
+      [[[
+        const open = refs.apps_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.apps.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+
+  - item: Zigbee2MQTT
+    exact: true
+    hide: |
+      [[[
+        const open = refs.apps_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.apps.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+
+  - item: File editor
+    exact: true
+    hide: |
+      [[[
+        const open = refs.apps_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.apps.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+
+  - item: Music Assistant
+    exact: true
+    hide: |
+      [[[
+        const open = refs.apps_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.apps.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+  
+  - item: SQLite Web
+    exact: true
+    hide: |
+      [[[
+        const open = refs.apps_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.apps.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+  
+  - item: ESPHome Builder
+    exact: true
+    hide: |
+      [[[
+        const open = refs.apps_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.apps.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+
+  - item: Terminal
+    exact: true
+    hide: |
+      [[[
+        const open = refs.apps_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.apps.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+
+  - item: Log Viewer
+    exact: true
+    hide: |
+      [[[
+        const open = refs.apps_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.apps.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+
+  - item: Version Control
+    exact: true
+    hide: |
+      [[[
+        const open = refs.apps_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.apps.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+
+  - item: Entity Manager
+    exact: true
+    hide: |
+      [[[
+        const open = refs.apps_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.apps.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+
+  - new_item: true
+    item: system_group_toggle
+    name: System
+    icon: |
+      [[[
+        const open = refs.system_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.system.some(
+          (path) => current === path || current.includes(path)
+        );
+        return (open || active) ? 'mdi:chevron-down' : 'mdi:cog-outline';
+      ]]]
+    attributes:
+      data-group-item: "true"
+    on_click:
+      action: javascript
+      code: |
+        refs.system_group_open = !refs.system_group_open;
+
+  - item: Einstellungen
+    exact: true
+    hide: |
+      [[[
+        const open = refs.system_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.system.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+
+  - new_item: true
+    item: Entwicklerwerkzeuge
+    href: /config/developer-tools
+    icon: mdi:hammer
+    hide: |
+      [[[
+        const open = refs.system_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.system.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+
+  - item: Backups
+    exact: true
+    hide: |
+      [[[
+        const open = refs.system_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.system.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+
+  - item: Verlauf
+    exact: true
+    hide: |
+      [[[
+        const open = refs.system_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.system.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+
+  - item: Aktivität
+    exact: true
+    hide: |
+      [[[
+        const open = refs.system_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.system.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+
+  - item: Energie
+    exact: true
+    hide: true
+
+  - item: Medien
+    exact: true
+    hide: true
+
+  - item: Benachrichtigungen
+    exact: true
+    hide: true
+
+styles: |
+  ha-md-list-item[data-nested-item="true"] {
+    --nested-hover-bg: rgba(37, 37, 37, 1);
+    --md-ripple-hover-opacity: 0 !important;
+    --custom-sidebar-item-background-hover-opacity: 0 !important;
+
+    position: relative;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+  }
+
+  ha-md-list-item[data-nested-item="true"]::before {
+    left: 4px !important;
+    right: -4px !important;
+    border-radius: inherit !important;
+  }
+
+  ha-md-list-item[data-nested-item="true"]:not(.selected)::before {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+
+  ha-md-list-item[data-nested-item="true"]:hover:not(.selected)::before {
+    background: var(--nested-hover-bg) !important;
+    opacity: 1 !important;
+  }
+
+  ha-md-list-item[data-nested-item="true"]::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 10px;
+    bottom: 10px;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.14);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  ha-md-list-item[data-nested-item="true"] .item-text {
+    padding-left: 0 !important;
+  }
+
+  ha-md-list-item[data-nested-item="true"] ha-icon[slot="start"],
+  ha-md-list-item[data-nested-item="true"] ha-svg-icon[slot="start"] {
+    margin-left: 8px !important;
+    opacity: 0.82;
+  }
+
+  ha-md-list-item[data-group-item="true"] {
+    font-weight: 600;
+  }

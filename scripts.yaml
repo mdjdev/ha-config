@@ -1,0 +1,257 @@
+delete_orphaned_database_entities:
+  alias: Delete orphaned database entities
+  sequence:
+  - action: homeassistant.list_orphaned_database_entities
+    response_variable: orphaned
+  - action: recorder.purge_entities
+    target:
+      entity_id: '{{ orphaned.entities }}
+
+        '
+    data:
+      keep_days: 0
+  mode: single
+  description: ''
+playbee_play_media_based_on_nfc_tag:
+  alias: PlayBee | Play media based on NFC tag
+  mode: single
+  fields:
+    tag_uid:
+      description: The scanned NFC tag UID
+      required: true
+  sequence:
+  - action: shell_command.playbee_db_get_tag
+    data:
+      tag_uid: '{{ tag_uid }}'
+    response_variable: db_response
+  - variables:
+      tag: "{% if db_response.returncode == 0 and db_response.stdout | trim != ''
+        %}\n  {{ db_response.stdout | from_json }}\n{% else %}\n  {{ {'found': false}
+        }}\n{% endif %}"
+      found: '{{ tag.found | default(false) }}'
+      media_url: '{{ tag.media_url | default('''') }}'
+      name: '{{ tag.name | default('''') }}'
+      shuffle: '{{ tag.shuffle | default(false) }}'
+      repeat_mode: '{{ tag.repeat_mode | default(''off'') }}'
+      resume: '{{ tag.resume | default(false) }}'
+      resume_data: '{{ tag.resume_data | default(none) }}'
+      track_id: '{{ resume_data.track_id if resume_data else none }}'
+      position: '{{ resume_data.position | int(0) if resume_data else 0 }}'
+      queue_id: '{{ resume_data.queue_id if resume_data else none }}'
+      do_resume: "{{ resume == true\n   and resume_data is not none\n   and track_id
+        not in [none, '', 'unknown', 'unavailable']\n   and position | int(0) > 0\n
+        \  and queue_id not in [none, '', 'unknown', 'unavailable'] }}"
+      media_player: media_player.googlehome2758
+  - if:
+    - condition: template
+      value_template: '{{ not found or not media_url }}'
+    then:
+    - action: system_log.write
+      data:
+        level: warning
+        logger: playbee.nfc
+        message: Unknown or incomplete NFC tag in DB. tag_uid={{ tag_uid }}
+    - stop: Unknown NFC tag
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.playbee_active_tag_uid
+    data:
+      value: '{{ tag_uid }}'
+  - action: media_player.clear_playlist
+    target:
+      entity_id: '{{ media_player }}'
+  - action: media_player.shuffle_set
+    target:
+      entity_id: '{{ media_player }}'
+    data:
+      shuffle: '{{ shuffle }}'
+  - action: media_player.repeat_set
+    target:
+      entity_id: '{{ media_player }}'
+    data:
+      repeat: '{{ repeat_mode }}'
+  - if:
+    - condition: template
+      value_template: '{{ do_resume }}'
+    then:
+    - if:
+      - condition: template
+        value_template: '{{ media_object is none }}'
+      then:
+      - action: system_log.write
+        data:
+          level: warning
+          logger: playbee.nfc
+          message: Could not resolve playlist object for resume. media_url={{ media_url
+            }}
+      - stop: Missing media object
+    - action: rest_command.playbee_ma_resume
+      data:
+        queue_id: '{{ queue_id }}'
+        track_id: '{{ track_id }}'
+        media_url: '{{ media_url }}'
+      response_variable: resume_response
+    - wait_template: '{{ states(media_player) in [''playing'', ''buffering''] }}'
+      timeout: 00:00:10
+      continue_on_timeout: true
+    - action: media_player.media_seek
+      target:
+        entity_id: '{{ media_player }}'
+      data:
+        seek_position: '{{ position | int }}'
+    else:
+    - action: shell_command.playbee_db_clear_resume
+      data:
+        tag_uid: '{{ tag_uid }}'
+    - action: media_player.play_media
+      target:
+        entity_id: '{{ media_player }}'
+      data:
+        metadata: {}
+        media:
+          media_content_id: '{{ media_url }}'
+          media_content_type: music
+          metadata: {}
+  description: ''
+playbee_stop_media:
+  alias: PlayBee | Stop media
+  mode: single
+  fields:
+    reason:
+      required: false
+  sequence:
+  - variables:
+      media_player: media_player.googlehome2758
+      active_tag_uid: '{{ states(''input_text.playbee_active_tag_uid'') }}'
+      has_active_tag: '{{ active_tag_uid not in ['''', ''unknown'', ''unavailable'']
+        }}'
+  - if:
+    - condition: template
+      value_template: '{{ not has_active_tag }}'
+    then:
+    - stop: No active tag
+  - action: shell_command.playbee_db_get_tag
+    data:
+      tag_uid: '{{ active_tag_uid }}'
+    response_variable: db_response
+  - variables:
+      tag: '{{ db_response[''stdout''] | from_json }}'
+      should_save: '{{ tag.found | default(false) and tag.resume | default(false)
+        }}'
+      corrected_position: "{% set pos = state_attr(media_player, 'media_position')
+        | float(0) %} {% set updated = state_attr(media_player, 'media_position_updated_at')
+        %} {% if updated %}\n  {{ [0, (pos + (now() - updated).total_seconds()) |
+        int] | max }}\n{% else %}\n  {{ pos | int(0) }}\n{% endif %}"
+  - if:
+    - condition: template
+      value_template: '{{ should_save }}'
+    then:
+    - action: music_assistant.get_queue
+      target:
+        entity_id: '{{ media_player }}'
+      response_variable: queue_data
+    - if:
+      - condition: template
+        value_template: "{{ queue_data.get(media_player) is not none\n   and queue_data[media_player].get('current_item')
+          is not none\n   and queue_data[media_player]['current_item'].get('queue_item_id')
+          is not none\n   and queue_data[media_player].get('queue_id') is not none
+          }}"
+      then:
+      - action: shell_command.playbee_db_save_resume
+        data:
+          tag_uid: '{{ active_tag_uid }}'
+          track_id: '{{ queue_data[media_player][''current_item''][''queue_item_id'']
+            }}'
+          position: '{{ corrected_position }}'
+          queue_id: '{{ queue_data[media_player][''queue_id''] }}'
+    else:
+    - action: shell_command.playbee_db_clear_resume
+      data:
+        tag_uid: '{{ active_tag_uid }}'
+  - action: media_player.media_stop
+    target:
+      entity_id: '{{ media_player }}'
+  - delay: 00:00:01
+  - action: media_player.clear_playlist
+    target:
+      entity_id: '{{ media_player }}'
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.playbee_active_tag_uid
+    data:
+      value: ''
+  description: ''
+playbee_play_media_based_on_nfc_tag_without_resume:
+  sequence:
+  - variables:
+      media_player: media_player.googlehome2758
+      found: '{{ states(''sensor.playbee_tag_lookup'') == ''True'' }}'
+      tag_uid: '{{ state_attr(''sensor.playbee_tag_lookup'', ''tag_uid'') }}'
+      name: '{{ state_attr(''sensor.playbee_tag_lookup'', ''name'') }}'
+      media_url: '{{ state_attr(''sensor.playbee_tag_lookup'', ''media_url'') }}'
+      shuffle: '{{ state_attr(''sensor.playbee_tag_lookup'', ''shuffle'') | default(false)
+        }}'
+      repeat_mode: '{{ state_attr(''sensor.playbee_tag_lookup'', ''repeat_mode'')
+        | default(''off'') }}'
+  - if:
+    - condition: template
+      value_template: '{{ not found or not media_url }}'
+    then:
+    - action: system_log.write
+      data:
+        level: warning
+        logger: playbee.nfc
+        message: Unknown or incomplete NFC tag in DB. tag_uid={{ states('input_text.playbee_lookup_tag_uid')
+          }}
+    - stop: Unknown NFC tag
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.playbee_active_tag_uid
+    data:
+      value: '{{ tag_uid }}'
+  - action: system_log.write
+    data:
+      level: info
+      logger: playbee.nfc
+      message: Playing from DB. tag_uid={{ tag_uid }}, name={{ name }}, url={{ media_url
+        }}, shuffle={{ shuffle }}, repeat={{ repeat_mode }}
+  - action: media_player.clear_playlist
+    target:
+      entity_id: '{{ media_player }}'
+  - action: media_player.shuffle_set
+    target:
+      entity_id: '{{ media_player }}'
+    data:
+      shuffle: '{{ shuffle }}'
+  - action: media_player.repeat_set
+    target:
+      entity_id: '{{ media_player }}'
+    data:
+      repeat: '{{ repeat_mode }}'
+  - action: media_player.play_media
+    target:
+      entity_id: '{{ media_player }}'
+    data:
+      metadata: {}
+      media:
+        media_content_id: '{{ media_url }}'
+        media_content_type: music
+        metadata: {}
+  alias: PlayBee | Play media based on NFC tag (without resume)
+  mode: restart
+  description: ''
+playbee_stop_media_without_resume:
+  sequence:
+  - variables:
+      media_player: media_player.googlehome2758
+  - action: media_player.media_stop
+    target:
+      entity_id: '{{ media_player }}'
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.playbee_active_tag_uid
+    data:
+      value: ''
+  alias: PlayBee | Stop media (without resume)
+  mode: restart
+  description: ''

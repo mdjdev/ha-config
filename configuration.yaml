@@ -1,0 +1,299 @@
+# Core integrations loaded by Home Assistant.
+# Docs: https://www.home-assistant.io/integrations/default_config
+default_config:
+
+
+# HTTP settings for reverse proxy support and forwarded client IP handling.
+# Docs: https://www.home-assistant.io/integrations/http/
+http:
+  use_x_forwarded_for: true
+
+  trusted_proxies:
+    # Reverse proxy allowed to forward client IP information.
+    - 192.168.178.54
+
+
+# Frontend settings for themes and additional UI modules.
+# Docs: https://www.home-assistant.io/integrations/frontend/
+frontend:
+  themes: !include_dir_merge_named themes
+
+  extra_module_url:
+    - /hacsfiles/custom-sidebar/custom-sidebar-plugin.js
+
+
+# Logging controls how much detail Home Assistant writes to the logs.
+# Docs: https://www.home-assistant.io/integrations/logger/
+logger:
+  #default: info
+  default: warning
+
+  logs:
+    homeassistant.components.automation: debug
+    #homeassistant.components.command_line: debug
+
+  # filters:
+  #   homeassistant:
+  #     # Can happen during restart with open Ingress tabs.
+  #     - "Error doing job: Task exception was never retrieved"
+
+  #   homeassistant.loader:
+  #     # Info about custom integrations can be noisy.
+  #     - "We found a custom integration"
+
+  #   homeassistant.components.zeroconf:
+  #     # Useful if you intentionally ignore Zeroconf name collisions.
+  #     - "instance with identical name present in the local network"
+
+  #   homeassistant.util.yaml.loader:
+  #     # Relevant if you intentionally use anchors / aliases with overrides.
+  #     - "contains duplicate key"
+
+
+# Recorder controls which states and events are stored in the history database.
+# Docs: https://www.home-assistant.io/integrations/recorder/
+recorder:
+  # Purge is handled by your own automation.
+  auto_purge: false
+
+  # Keep 30 days of recorder history.
+  purge_keep_days: 30
+
+  # Slightly reduce write frequency.
+  commit_interval: 10
+
+  include:
+    entities:
+      # Selected device trackers you explicitly care about.
+      - device_tracker.pixel_9_pro_obsidian
+      - device_tracker.obsidian_mobile
+      - device_tracker.pixel_9_pro_obsidian_ping
+      - device_tracker.pixel_9_pro_hazel
+      - device_tracker.hazel_mobile
+      - device_tracker.pixel_9_pro_hazel_ping
+
+    entity_globs:
+      # Room and environment sensors used in dashboards.
+      - sensor.*temperature*
+      - sensor.*temperatur*
+      - sensor.*humidity*
+      - sensor.*luftfeuchtigkeit*
+      - sensor.*trv*
+
+      # Power and energy history without raw current or voltage sensors.
+      - sensor.*power*
+      - sensor.*energy*
+      - sensor.*leistung*
+      - sensor.*verbrauch*
+      - sensor.*verbrauch_total*
+      - sensor.*energie*
+
+      # Contact, opening, and leak sensors with mixed DE/EN naming.
+      - binary_sensor.*door*
+      - binary_sensor.*window*
+      - binary_sensor.*fenster*
+      - binary_sensor.*tuer*
+      - binary_sensor.*tur*
+      - binary_sensor.*opening*
+      - binary_sensor.*contact*
+      - binary_sensor.*open*
+      - binary_sensor.*leak*
+      - binary_sensor.*water*
+      - binary_sensor.*wasser*
+      - binary_sensor.*moisture*
+      
+      # PlayBee
+      - binary_sensor.*playbee*
+      - sensor.*playbee*
+      - input_text.*playbee*
+
+  exclude:
+    domains:
+      - camera
+      - image
+      - media_player
+      - weather
+
+    entity_globs:
+      # Very chatty diagnostics that are usually not useful in recorder.
+      - sensor.*_verbindungsqualitat
+
+      # Internal chip and board temperatures; room sensors are kept above.
+      - sensor.*zigbee_chip_temperatur
+      - sensor.*core_chip_temperatur
+
+      # Raw electrical measurements you said you do not want.
+      - sensor.*current*
+      - sensor.*voltage*
+      - sensor.*strom*
+      - sensor.*spannung*
+      - sensor.*stromstarke*
+
+    entities:
+      - sun.sun
+
+    event_types:
+      # Avoid storing service-call events.
+      - call_service
+
+
+# Shell commands let Home Assistant run external scripts or commands.
+# Docs: https://www.home-assistant.io/integrations/shell_command/
+shell_command:
+  # PlayBee database commands.
+  playbee_db_init: "python3 /config/scripts/playbee_db.py init"
+#   playbee_db_upsert_tag: >-
+#     python3 /config/scripts/playbee_db.py upsert_tag
+#     "{{ tag_uid }}"
+#     "{{ name }}"
+#     "{{ media_url }}"
+#     "{{ shuffle }}"
+#     "{{ repeat_mode }}"
+
+  playbee_db_get_tag: >-
+    python3 /config/scripts/playbee_db.py get_tag
+    "{{ tag_uid }}"
+
+  playbee_db_save_resume: >-
+    python3 /config/scripts/playbee_db.py save_resume
+    "{{ tag_uid }}"
+    "{{ queue_id }}"
+    "{{ track_id }}"
+    "{{ position }}"
+
+  playbee_db_clear_resume: >-
+    python3 /config/scripts/playbee_db.py clear_resume
+    "{{ tag_uid }}"
+    
+  # HAGit helper commands.
+  hagit_init_keys: bash /config/shell_commands/hagit_init_keys.sh
+  hagit_check_auth: bash /config/shell_commands/hagit_check_auth.sh
+  hagit_write_gitignore: bash /config/shell_commands/hagit_write_gitignore.sh "{{ content }}"
+  hagit_init_repo: bash /config/shell_commands/hagit_init_repo.sh
+  hagit_commit_changes: bash /config/shell_commands/hagit_commit_changes.sh
+
+  # Keep the remote Chromium target reachable.
+  keep_chromium_awake: >-
+    /usr/bin/curl -ksS --max-time 15 -o /dev/null https://cs.dsja.de:8443/
+
+
+rest_command:
+  playbee_ma_resume:
+    url: !secret playbee_ma_api_url
+    method: POST
+    headers:
+      accept: "application/json, text/html"
+      authorization: !secret playbee_ma_token
+    payload: >-
+      {
+        "message_id": "1",
+        "command": "player_queues/play_media",
+        "args": {
+          "queue_id": "{{ queue_id }}",
+          "media": "{{ media_url }}",
+          "radio_mode": false,
+          "start_item": "{{ track_id }}"
+        }
+      }
+    content_type: "application/json; charset=utf-8"
+
+
+# Command line sensors expose shell command results as Home Assistant entities.
+# Docs: https://www.home-assistant.io/integrations/command_line/
+command_line:
+  - binary_sensor:
+      name: HAGit - .git initialisiert
+      unique_id: "binary_sensor.hagit_git_initialisiert"
+      command: '[ -d /config/.git ] && echo "ON" || echo "OFF"'
+      scan_interval: 60
+      payload_on: "ON"
+      payload_off: "OFF"
+
+  - binary_sensor:
+      name: HAGit - Privater Schlüssel existiert
+      unique_id: "binary_sensor.hagit_privater_schlussel_existiert"
+      command: '[ -f /config/.ssh/id_rsa_github ] && echo "ON" || echo "OFF"'
+      scan_interval: 60
+      payload_on: "ON"
+      payload_off: "OFF"
+
+  - binary_sensor:
+      name: HAGit - .gitignore existiert
+      unique_id: "binary_sensor.hagit_gitignore_existiert"
+      command: '[ -f /config/.gitignore ] && echo "ON" || echo "OFF"'
+      scan_interval: 60
+      payload_on: "ON"
+      payload_off: "OFF"
+
+  - binary_sensor:
+      name: HAGit - git status
+      unique_id: "binary_sensor.hagit_git_status"
+      command: 'git -C /config status --porcelain | grep -q . && echo "ON" || echo "OFF"'
+      scan_interval: 60
+      payload_on: "ON"
+      payload_off: "OFF"
+
+
+# Automations are loaded from a separate file managed in YAML or the UI.
+# Docs: https://www.home-assistant.io/docs/automation/
+automation: !include automations.yaml
+
+
+# Scenes are loaded from the scene editor file.
+# Docs: https://www.home-assistant.io/integrations/scene/
+scene: !include scenes.yaml
+
+
+# Scripts are loaded from a separate file.
+# Docs: https://www.home-assistant.io/integrations/script/
+script: !include scripts.yaml
+
+
+# Template entities derive new sensors from events, states, or other templates.
+# Docs: https://www.home-assistant.io/integrations/template/
+template:
+  - trigger:
+      # Listen for Android intent events from the mobile app.
+      - platform: event
+        event_type: android.intent_received
+        event_data:
+          android.bluetooth.device.extra.DEVICE: "XX:XX:XX:XX:5E:C9"
+          intent: android.bluetooth.device.action.BATTERY_LEVEL_CHANGED
+
+    sensor:
+      - name: "musiCosy Battery Level"
+        unique_id: "9a4c70dc-b844-42af-b10c-7d8e0ce1fb93"
+        device_class: battery
+        state_class: measurement
+        unit_of_measurement: "%"
+
+        # Keep the previous value if Android reports 0 or a negative value.
+        state: >-
+          {%- if trigger.event.data['android.bluetooth.device.extra.BATTERY_LEVEL'] | int <= 0 -%}
+            {{ states('sensor.musicosy_battery_level') }}
+          {%- else -%}
+            {{ trigger.event.data['android.bluetooth.device.extra.BATTERY_LEVEL'] }}
+          {%- endif -%}
+  
+  - trigger:
+      # Listen for Android intent events from the mobile app.
+      - platform: event
+        event_type: android.intent_received
+        event_data:
+          android.bluetooth.device.extra.DEVICE: "XX:XX:XX:XX:F9:23"
+          intent: android.bluetooth.device.action.BATTERY_LEVEL_CHANGED
+
+    sensor:
+      - name: "musiCosy 2 Battery Level"
+        unique_id: "08117080-d8d9-4210-9508-a4c48056f605"
+        device_class: battery
+        state_class: measurement
+        unit_of_measurement: "%"
+        
+        # Keep the previous value if Android reports 0 or a negative value.
+        state: >-
+          {%- if trigger.event.data['android.bluetooth.device.extra.BATTERY_LEVEL'] | int <= 0 -%}
+            {{ states('sensor.musicosy_2_battery_level') }}
+          {%- else -%}
+            {{ trigger.event.data['android.bluetooth.device.extra.BATTERY_LEVEL'] }}
+          {%- endif -%}

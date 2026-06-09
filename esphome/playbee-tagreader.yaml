@@ -1,0 +1,118 @@
+substitutions:
+  name: playbee-tagreader
+  friendly_name: PlayBee TagReader
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  name_add_mac_suffix: false
+
+esp8266:
+  board: d1_mini
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: ${name}
+
+captive_portal:
+
+logger:
+
+api:
+
+ota:
+  - platform: esphome
+
+i2c:
+  scan: false
+  frequency: 100kHz
+
+globals:
+  - id: active_uid
+    type: std::string
+    restore_value: no
+    initial_value: '""'
+  - id: last_announced_uid
+    type: std::string
+    restore_value: no
+    initial_value: '""'
+
+script:
+  - id: clear_tag_after_delay
+    mode: restart
+    then:
+      - logger.log: "Starting tag removal debounce"
+      - delay: 1200ms
+      - lambda: |-
+          id(active_uid).clear();
+          id(last_announced_uid).clear();
+      - logger.log: "Debounce elapsed, clearing tag state"
+      - text_sensor.template.publish:
+          id: current_tag_uid
+          state: ""
+      - binary_sensor.template.publish:
+          id: card_present
+          state: OFF
+
+pn532_i2c:
+  id: pn532_board
+  update_interval: 500ms
+
+  on_tag:
+    then:
+      - script.stop: clear_tag_after_delay
+      - lambda: |-
+          const bool is_new_tag = (id(active_uid) != x);
+          id(active_uid) = x;
+          ESP_LOGD("tagreader", "%s tag: %s", is_new_tag ? "New active" : "Same active", x.c_str());
+      - text_sensor.template.publish:
+          id: current_tag_uid
+          state: !lambda 'return id(active_uid);'
+      - binary_sensor.template.publish:
+          id: card_present
+          state: ON
+      - if:
+          condition:
+            lambda: 'return id(last_announced_uid) != x;'
+          then:
+            - lambda: 'id(last_announced_uid) = x;'
+            - homeassistant.tag_scanned: !lambda 'return x;'
+
+  on_tag_removed:
+    then:
+      - logger.log: "Raw tag removed, starting debounce"
+      - script.execute: clear_tag_after_delay
+
+binary_sensor:
+  - platform: status
+    name: "Status"
+    entity_category: diagnostic
+
+  - platform: template
+    name: "Card Present"
+    id: card_present
+    device_class: presence
+
+text_sensor:
+  - platform: template
+    name: "Current Tag UID"
+    id: current_tag_uid
+    update_interval: never
+    icon: mdi:nfc
+
+  - platform: version
+    hide_timestamp: true
+    name: "ESPHome Version"
+    entity_category: diagnostic
+
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+      icon: mdi:wifi
+      entity_category: diagnostic
+    ssid:
+      name: "Connected SSID"
+      icon: mdi:wifi-strength-2
+      entity_category: diagnostic

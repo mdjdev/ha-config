@@ -1,0 +1,1172 @@
+- id: '1695838958087'
+  alias: Fenster | Benachrichtigungen entfernen
+  description: ''
+  triggers:
+  - entity_id:
+    - binary_sensor.hmip_badezimmer_fenster
+    - binary_sensor.hmip_schlafzimmer_fenster
+    - binary_sensor.hmip_gaste_wc_fenster
+    - binary_sensor.hmip_kinderzimmer_fenster
+    - binary_sensor.hmip_kuche_fenster
+    - binary_sensor.hmip_wohnzimmer_schiebetur
+    - binary_sensor.hmip_buro_fenster
+    - binary_sensor.hmip_treppenhaus_fenster
+    - binary_sensor.hmip_keller_waschkuche_fenster
+    to: 'off'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 1
+    trigger: state
+  conditions: []
+  actions:
+  - data:
+      message: clear_notification
+      data:
+        tag: '{{ trigger.entity_id }}'
+    action: notify.mobile_app_obsidian
+  mode: parallel
+  max: 15
+- id: '1696011063742'
+  alias: Kinderzimmer | Wickelkommode Infrarot-Heizung
+  description: ''
+  triggers:
+  - id: button_press
+    domain: mqtt
+    device_id: d495ece8ea7075443fbd397112ec0546
+    type: action
+    subtype: single
+    trigger: device
+  - id: switch_on_too_long
+    entity_id:
+    - switch.kinderzimmer_steckdose_infrarot_heizung
+    to: 'on'
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: button_press
+      sequence:
+      - target:
+          entity_id: switch.kinderzimmer_steckdose_infrarot_heizung
+        action: switch.toggle
+        data: {}
+    - conditions:
+      - condition: trigger
+        id: switch_on_too_long
+      sequence:
+      - target:
+          entity_id: switch.kinderzimmer_steckdose_infrarot_heizung
+        action: homeassistant.turn_off
+        data: {}
+  mode: single
+- id: '1719350560957'
+  alias: Eufy Robovac | Nicht abgeschlossen Benachrichtigung mit Action
+  description: ''
+  triggers:
+  - at: 07:30:00
+    trigger: time
+  conditions:
+  - condition: state
+    entity_id: vacuum.robovac
+    state: idle
+  actions:
+  - repeat:
+      for_each: "{{ states.device_tracker\n  | selectattr('entity_id', 'match', 'device_tracker.*(oneplus_8_pro|huawei_p20_pro)$')\n
+        \ | selectattr('state', 'eq', 'home')\n  | map(attribute='entity_id')\n  |
+        list }}"
+      sequence:
+      - variables:
+          device_id: '{{ repeat.item }}'
+          device_name: "{% if device_id == 'device_tracker.oneplus_8_pro' %}\n  in2023\n{%
+            elif device_id == 'device_tracker.huawei_p20_pro' %}\n  clt_l09\n{% else
+            %}\n  unknown\n{% endif %}"
+      - condition: template
+        value_template: '{{ device_name != ''unknown'' }}'
+      - data:
+          message: Eufy Robovac | Tägliche Reinigung wurde nicht abgeschlossen
+          data:
+            tag: vacuum.robovac.idle
+            ttl: 0
+            priority: high
+            notification_icon: mdi:robot-vacuum-off
+            actions:
+            - action: VACUUM_CONTINUE
+              title: Starten
+        action: notify.mobile_app_{{ device_name }}
+  mode: single
+- id: '1719428989327'
+  alias: Eufy Robovac | Reinigung fortsetzen
+  description: ''
+  triggers:
+  - at: 05:00:00
+    trigger: time
+  - event_type: mobile_app_notification_action
+    event_data:
+      action: VACUUM_CONTINUE
+    trigger: event
+  conditions:
+  - condition: state
+    entity_id: vacuum.robovac
+    state: idle
+  actions:
+  - target:
+      entity_id: vacuum.robovac
+    data: {}
+    action: vacuum.start
+  mode: single
+- id: '1729019876280'
+  alias: System | Recorder Purge
+  description: 'Purge my recorder database every hour, to keep things nice and tight.
+
+
+    While Home Assistant does this daily, I like to do it every hour.'
+  triggers:
+  - minutes: 12
+    trigger: time_pattern
+  conditions: []
+  actions:
+  - action: recorder.purge
+    data:
+      repack: false
+      apply_filter: false
+  mode: single
+- id: '1729020041351'
+  alias: System | Recorder Repack
+  description: 'Sunday morning, early morning, repack the recorder database.
+
+    This keeps the disk usage low and nice by reclaiming space.'
+  triggers:
+  - at: 05:55
+    trigger: time
+  conditions:
+  - condition: time
+    weekday:
+    - sun
+  actions:
+  - data:
+      repack: true
+    action: recorder.purge
+  mode: single
+- id: '1729883391612'
+  alias: Vorratsraum | Ventilator
+  description: ''
+  triggers:
+  - event: start
+    trigger: homeassistant
+  - event_type: automation_reloaded
+    trigger: event
+  - trigger: time_pattern
+    minutes: /15
+  conditions:
+  - condition: template
+    value_template: "{% if now().minute < 15 %}\n  {{ is_state('switch.vorratsraum_steckdose_ventilator',
+      'off') }}\n{% else %}\n  {{ is_state('switch.vorratsraum_steckdose_ventilator',
+      'on') }}\n{% endif %}\n"
+  actions:
+  - target:
+      entity_id: switch.vorratsraum_steckdose_ventilator
+    action: switch.toggle
+    data: {}
+  mode: single
+  max: 10
+- id: '1729886719334'
+  alias: Büro | Licht
+  description: ''
+  triggers:
+  - domain: mqtt
+    device_id: b308bb165f759910d94557e7b93c3182
+    type: action
+    subtype: single
+    trigger: device
+  conditions: []
+  actions:
+  - target:
+      entity_id: switch.buro_lichtschalter_tur_schalter_links
+    action: switch.toggle
+    data: {}
+  mode: single
+- id: '1729888215580'
+  alias: Waschküche | Luftentfeuchter
+  description: ''
+  triggers:
+  - event: start
+    trigger: homeassistant
+  - event_type: automation_reloaded
+    trigger: event
+  - minutes: /5
+    trigger: time_pattern
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.hmip_keller_waschkuche_fenster
+    state: 'off'
+  - condition: template
+    value_template: '{{ sensor != '''' and switch != '''' }}'
+  - condition: template
+    value_template: '{% set humidity = states(sensor) | float(0) %} {{ humidity <
+      humidity_low or humidity > humidity_high }}
+
+      '
+  actions:
+  - data:
+      level: info
+      message: 'Sensor: {{ sensor }}, Switch: {{ switch }}, Humidity: {{ states(sensor)
+        | float(0) }}'
+    action: system_log.write
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ states(sensor) | float(0) < humidity_low }}'
+      sequence:
+      - target:
+          entity_id: '{{ switch }}'
+        action: switch.turn_off
+        data: {}
+    - conditions:
+      - condition: template
+        value_template: '{{ states(sensor) | float(0) > humidity_high }}'
+      sequence:
+      - target:
+          entity_id: '{{ switch }}'
+        action: switch.turn_on
+        data: {}
+  - delay: 00:01:00
+  mode: single
+  variables:
+    device: input_select.waschkueche_luftentfeuchter_standort
+    sensor: "{% if is_state(device, 'Waschküche') %}\n  sensor.waschkuche_temperatur_und_luftfeuchtigkeitssensor_humidity\n{%
+      elif is_state(device, 'Treppenhaus') %}\n  sensor.keller_treppenhaus_temperatur_und_luftfeuchtigkeitssensor_humidity\n{%
+      else %}\n  ''\n{% endif %}\n"
+    switch: "{% if is_state(device, 'Waschküche') %}\n  switch.waschkuche_steckdose_luftentfeuchter_schalter\n{%
+      elif is_state(device, 'Treppenhaus') %}\n  switch.waschkuche_steckdose_luftentfeuchter_schalter\n{%
+      else %}\n  ''\n{% endif %}\n"
+    humidity_low: 62
+    humidity_high: 65
+- id: '1729889123165'
+  alias: Fenster | Benachrichtigungen anzeigen
+  description: ''
+  triggers:
+  - minutes: /1
+    trigger: time_pattern
+  - entity_id:
+    - device_tracker.pixel_9_pro_obsidian
+    to: home
+    for:
+      minutes: 2
+    trigger: state
+  conditions:
+  - condition: template
+    value_template: "{{ states.binary_sensor\n   | selectattr('entity_id', 'match',
+      'binary_sensor.*(fenster|schiebetur)$')\n   | selectattr('state', 'eq', 'on')\n
+      \  | list | length > 0 }}"
+  - condition: template
+    value_template: "{{ states.device_tracker\n   | selectattr('entity_id', 'match',
+      'device_tracker.*(pixel_9_pro_obsidian|huawei_p20_pro)$')\n   | selectattr('state',
+      'eq', 'home')\n   | list | length > 0 }}"
+  actions:
+  - repeat:
+      for_each: "{{ states.binary_sensor\n  | selectattr('entity_id', 'match', 'binary_sensor.*(fenster|schiebetur)$')\n
+        \ | selectattr('state', 'eq', 'on')\n  | map(attribute='entity_id')\n  | list
+        }}"
+      sequence:
+      - variables:
+          sensor_id: '{{ repeat.item }}'
+          sensor_name: '{{ states[sensor_id].attributes.friendly_name | replace(''HmIP
+            '', '''') }}'
+          open_minutes: '{{ ((as_timestamp(now()) - as_timestamp(states[sensor_id].last_changed))
+            // 60) | round(0, ''ceil'') }}'
+          delay: "{% if trigger.to_state is defined and trigger.to_state.state ==
+            'home' %}\n  0\n{% elif open_minutes <= 6 %}\n  {{ open_minutes % 2 }}\n{%
+            elif open_minutes <= 30 %}\n  {{ open_minutes % 5 }}\n{% elif open_minutes
+            <= 60 %}\n  {{ open_minutes % 10 }}\n{% elif open_minutes <= 120 %}\n
+            \ {{ open_minutes % 15 }}\n{% elif open_minutes <= 180 %}\n  {{ open_minutes
+            % 30 }}\n{% else %}\n  {{ open_minutes % 60 }}\n{% endif %}\n"
+      - condition: template
+        value_template: '{{ delay == 0 }}'
+      - repeat:
+          for_each: "{{ states.device_tracker\n  | selectattr('entity_id', 'match',
+            'device_tracker.*(pixel_9_pro_obsidian|huawei_p20_pro)$')\n  | selectattr('state',
+            'eq', 'home')\n  | map(attribute='entity_id')\n  | list }}"
+          sequence:
+          - variables:
+              device_id: '{{ repeat.item }}'
+              device_name: "{% if device_id.startswith('device_tracker.huawei_p20_pro')
+                %}\n  huawei_p20_pro\n{% elif device_id.startswith('device_tracker.pixel_9_pro_obsidian')
+                %}\n  obsidian\n{% endif %}"
+          - condition: template
+            value_template: '{{ device_name != '''' }}'
+          - data_template:
+              message: "{% if open_minutes <= 1 %}\n  {{ sensor_name }}: 1 Minute\n{%
+                elif open_minutes <= 180 %}\n  {{ sensor_name }}: {{ open_minutes
+                }} Minuten\n{% else %}\n  {{ sensor_name }}: {{ open_minutes // 60
+                | int }} Stunden\n{% endif %}"
+              data:
+                tag: '{{ sensor_id }}'
+                ttl: 0
+                priority: high
+                notification_icon: mdi:weather-windy
+            action: notify.mobile_app_{{ device_name }}
+  mode: single
+- id: '1730460534845'
+  alias: Heizungsraum | Kondenswasser
+  description: ''
+  triggers:
+  - event: start
+    trigger: homeassistant
+  - event_type: automation_reloaded
+    trigger: event
+  - trigger: time_pattern
+    minutes: '0'
+  - entity_id:
+    - binary_sensor.heizungsraum_sensor_kondenswasser_water_leak
+    to:
+    - 'on'
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
+    trigger: state
+  conditions:
+  - type: is_moist
+    condition: device
+    device_id: 227f716102a020501153449ffe3c8062
+    entity_id: d4e85875cb7b9271d443fba9d4d11b9d
+    domain: binary_sensor
+  actions:
+  - action: notify.mobile_app_obsidian
+    data_template:
+      message: Kondenswasser Eimer leeren!
+      data:
+        tag: '{{ this.entity_id }}'
+        ttl: 0
+        priority: high
+        notification_icon: mdi:cup-water
+  mode: single
+  max: 10
+- id: '1731959427205'
+  alias: Küche | Hängeschranke Beleuchtung
+  description: ''
+  triggers:
+  - event: start
+    trigger: homeassistant
+  - entity_id:
+    - switch.kuche_schalter_beleuchtung_hangeschranke_switch_0
+    from:
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: switch.kuche_schalter_beleuchtung_hangeschranke_switch_0
+        state: 'on'
+      sequence:
+      - type: turn_on
+        device_id: 5f2bbb4dd76156ea7cfb57088b9c6cdf
+        entity_id: 2b7326319fdaebdbecbba8d999e6889a
+        domain: switch
+    - conditions:
+      - condition: state
+        entity_id: switch.kuche_schalter_beleuchtung_hangeschranke_switch_0
+        state: 'off'
+      sequence:
+      - type: turn_off
+        device_id: 5f2bbb4dd76156ea7cfb57088b9c6cdf
+        entity_id: 2b7326319fdaebdbecbba8d999e6889a
+        domain: switch
+  mode: queued
+  max: 10
+- id: '1736542717463'
+  alias: System | FRITZ!Box Cleanup
+  description: ''
+  triggers:
+  - at: 03:00:00
+    trigger: time
+  conditions: []
+  actions:
+  - target:
+      entity_id: button.fritz_box_5690_pro_aufraumen
+    action: button.press
+    data: {}
+  mode: single
+- id: '1746040248436'
+  alias: musiCosy | Batterie Benachrichtigung
+  description: ''
+  triggers:
+  - trigger: time
+    at: 06:30:00
+  - trigger: time
+    at: '18:00:00'
+  conditions:
+  - condition: numeric_state
+    entity_id: sensor.musicosy_battery_level
+    below: 60
+  actions:
+  - data:
+      title: musiCosy
+      message: '{{ states(''sensor.musicosy_battery_level'') }}%'
+    action: notify.mobile_app_obsidian
+  mode: single
+- id: '1750364021950'
+  alias: Flur | Luftentfeuchter Kombi
+  description: ''
+  triggers:
+  - event: start
+    trigger: homeassistant
+  - event_type: automation_reloaded
+    trigger: event
+  - minutes: /5
+    trigger: time_pattern
+  actions:
+  - variables:
+      humidity: "{% set s1 = states(sensor1) | float(0) %}\n{% set s2 = states(sensor2)
+        | float(0) %}\n{% set count = (s1 > 0) + (s2 > 0) %}\n{% if count > 0 %}\n
+        \ {{ (s1 + s2) / count }}\n{% else %}\n  0\n{% endif %}"
+  - data:
+      level: info
+      message: 'Sensor 1: {{ sensor1 }},
+
+        Sensor 2: {{ sensor2 }},
+
+        Humidity: {{ humidity }}'
+    action: system_log.write
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ humidity < humidity_low }}'
+      sequence:
+      - target:
+          entity_id: '{{ switch }}'
+        action: switch.turn_off
+        data: {}
+    - conditions:
+      - condition: template
+        value_template: '{{ humidity > humidity_high }}'
+      sequence:
+      - target:
+          entity_id: '{{ switch }}'
+        action: switch.turn_on
+        data: {}
+  - delay: 00:01:00
+  mode: single
+  variables:
+    sensor1: sensor.vorratsraum_temperatur_und_luftfeuchtigkeitssensor_humidity
+    sensor2: sensor.werkraum_temperatur_und_luftfeuchtigkeitssensor_humidity
+    switch: switch.vorratsraum_steckdose_luftentfeuchter_schalter
+    humidity_low: 62
+    humidity_high: 64
+- id: '1750881421664'
+  alias: Lager | Luftentfeuchter
+  description: ''
+  triggers:
+  - event: start
+    trigger: homeassistant
+  - event_type: automation_reloaded
+    trigger: event
+  - minutes: /5
+    trigger: time_pattern
+  conditions:
+  - condition: template
+    value_template: '{{ sensor != '''' and switch != '''' }}'
+  - condition: template
+    value_template: '{% set humidity = states(sensor) | float(0) %}
+
+      {{ humidity < humidity_low or humidity > humidity_high }}
+
+      '
+  actions:
+  - data:
+      level: info
+      message: 'Sensor: {{ sensor }}, Switch: {{ switch }}, Humidity: {{ states(sensor)
+        | float(0) }}'
+    action: system_log.write
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ states(sensor) | float(0) < humidity_low }}'
+      sequence:
+      - target:
+          entity_id: '{{ switch }}'
+        action: switch.turn_off
+        data: {}
+    - conditions:
+      - condition: template
+        value_template: '{{ states(sensor) | float(0) > humidity_high }}'
+      sequence:
+      - target:
+          entity_id: '{{ switch }}'
+        action: switch.turn_on
+        data: {}
+  - delay: 00:01:00
+  mode: single
+  variables:
+    sensor: sensor.lager_temperatur_und_luftfeuchtigkeitssensor_humidity
+    switch: switch.lager_steckdose_luftentfeuchter_schalter
+    humidity_low: 62
+    humidity_high: 64
+- id: '1757144141225'
+  alias: Lager | Luftentfeuchter Voll Benachrichtigung
+  description: ''
+  triggers:
+  - type: power
+    device_id: cdea829f6c12f8c8e0ba215c726ebbaa
+    entity_id: 24fa8f19caa8291480ee019043539930
+    domain: sensor
+    trigger: device
+    below: 5
+    for:
+      hours: 0
+      minutes: 15
+      seconds: 0
+  - type: power
+    device_id: cdea829f6c12f8c8e0ba215c726ebbaa
+    entity_id: 24fa8f19caa8291480ee019043539930
+    domain: sensor
+    trigger: device
+    below: 5
+    for:
+      hours: 1
+      minutes: 0
+      seconds: 0
+  - type: power
+    device_id: cdea829f6c12f8c8e0ba215c726ebbaa
+    entity_id: 24fa8f19caa8291480ee019043539930
+    domain: sensor
+    trigger: device
+    below: 5
+    for:
+      hours: 4
+      minutes: 0
+      seconds: 0
+  - type: power
+    device_id: cdea829f6c12f8c8e0ba215c726ebbaa
+    entity_id: 24fa8f19caa8291480ee019043539930
+    domain: sensor
+    trigger: device
+    below: 5
+    for:
+      hours: 12
+      minutes: 0
+      seconds: 0
+  - type: power
+    device_id: cdea829f6c12f8c8e0ba215c726ebbaa
+    entity_id: 24fa8f19caa8291480ee019043539930
+    domain: sensor
+    trigger: device
+    below: 5
+    for:
+      hours: 24
+      minutes: 0
+      seconds: 0
+  conditions:
+  - condition: state
+    entity_id: switch.lager_steckdose_luftentfeuchter_schalter
+    state: 'on'
+  actions:
+  - data:
+      message: 'Lager | Luftentfeuchter voll
+
+        '
+      data:
+        tag: '{{ this.entity_id }}'
+        ttl: 0
+        priority: high
+        notification_icon: mdi:air-humidifier-off
+    action: notify.mobile_app_obsidian
+  mode: single
+- id: '1757144795034'
+  alias: Flur | Luftentfeuchter Voll Benachrichtigung
+  description: ''
+  triggers:
+  - type: power
+    device_id: e03d2ed3102019914656ca89e8416066
+    entity_id: e95b60cfc60821381757e29b873c5d20
+    domain: sensor
+    trigger: device
+    below: 5
+    for:
+      hours: 0
+      minutes: 15
+      seconds: 0
+  - type: power
+    device_id: e03d2ed3102019914656ca89e8416066
+    entity_id: e95b60cfc60821381757e29b873c5d20
+    domain: sensor
+    trigger: device
+    below: 5
+    for:
+      hours: 1
+      minutes: 0
+      seconds: 0
+  - type: power
+    device_id: e03d2ed3102019914656ca89e8416066
+    entity_id: e95b60cfc60821381757e29b873c5d20
+    domain: sensor
+    trigger: device
+    below: 5
+    for:
+      hours: 4
+      minutes: 0
+      seconds: 0
+  - type: power
+    device_id: e03d2ed3102019914656ca89e8416066
+    entity_id: e95b60cfc60821381757e29b873c5d20
+    domain: sensor
+    trigger: device
+    below: 5
+    for:
+      hours: 12
+      minutes: 0
+      seconds: 0
+  - type: power
+    device_id: e03d2ed3102019914656ca89e8416066
+    entity_id: e95b60cfc60821381757e29b873c5d20
+    domain: sensor
+    trigger: device
+    below: 5
+    for:
+      hours: 24
+      minutes: 0
+      seconds: 0
+  conditions:
+  - condition: state
+    entity_id: switch.vorratsraum_steckdose_luftentfeuchter_schalter
+    state: 'on'
+  actions:
+  - data:
+      message: 'Flur | Luftentfeuchter voll
+
+        '
+      data:
+        tag: '{{ this.entity_id }}'
+        ttl: 0
+        priority: high
+        notification_icon: mdi:air-humidifier-off
+    action: notify.mobile_app_obsidian
+  mode: single
+- id: '1757712408719'
+  alias: Waschküche | Luftentfeuchter Voll Benachrichtigung
+  description: ''
+  triggers:
+  - type: power
+    device_id: c59bb2263d6ea7da7031b080ccfda336
+    entity_id: e7113981aadbf1ca15db511a90f581e4
+    domain: sensor
+    trigger: device
+    below: 5
+    for:
+      hours: 0
+      minutes: 15
+      seconds: 0
+  - type: power
+    device_id: c59bb2263d6ea7da7031b080ccfda336
+    entity_id: e7113981aadbf1ca15db511a90f581e4
+    domain: sensor
+    trigger: device
+    below: 5
+    for:
+      hours: 1
+      minutes: 0
+      seconds: 0
+  - type: power
+    device_id: c59bb2263d6ea7da7031b080ccfda336
+    entity_id: e7113981aadbf1ca15db511a90f581e4
+    domain: sensor
+    trigger: device
+    below: 5
+    for:
+      hours: 4
+      minutes: 0
+      seconds: 0
+  - type: power
+    device_id: c59bb2263d6ea7da7031b080ccfda336
+    entity_id: e7113981aadbf1ca15db511a90f581e4
+    domain: sensor
+    trigger: device
+    below: 5
+    for:
+      hours: 12
+      minutes: 0
+      seconds: 0
+  - type: power
+    device_id: c59bb2263d6ea7da7031b080ccfda336
+    entity_id: e7113981aadbf1ca15db511a90f581e4
+    domain: sensor
+    trigger: device
+    below: 5
+    for:
+      hours: 24
+      minutes: 0
+      seconds: 0
+  conditions:
+  - condition: state
+    entity_id: switch.waschkuche_steckdose_luftentfeuchter_schalter
+    state: 'on'
+  actions:
+  - data:
+      message: 'Waschküche | Luftentfeuchter voll
+
+        '
+      data:
+        tag: '{{ this.entity_id }}'
+        ttl: 0
+        priority: high
+        notification_icon: mdi:air-humidifier-off
+    action: notify.mobile_app_obsidian
+  mode: single
+- id: '1757877683393'
+  alias: Batterie-Monitor | Austausch Benachrichtigen
+  description: ''
+  triggers:
+  - trigger: event
+    event_type: battery_notes_battery_threshold
+    event_data:
+      battery_low: true
+  conditions: []
+  actions:
+  - action: system_log.write
+    data:
+      level: info
+      message: 'Event: {{ trigger.event.data }}'
+  - action: notify.mobile_app_obsidian
+    data:
+      title: '{{ trigger.event.data.device_name }} Batterie bei {{ trigger.event.data.battery_level
+        }}%'
+      message: Benötigt {{ trigger.event.data.battery_quantity }}× {{ trigger.event.data.battery_type
+        }}.
+      data:
+        tag: '{{ trigger.event.data.device_name }}'
+        ttl: 0
+        priority: high
+        notification_icon: mdi:battery
+        clickAction: /dashboard-batteries
+        actions:
+        - action: BATTERY_REPLACED
+          title: Als ersetzt markieren
+  mode: queued
+- id: '1758796768373'
+  alias: HAGit - 1 | Schlüsselpaar erstellen
+  description: ''
+  triggers:
+  - event: start
+    trigger: homeassistant
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.hagit_privater_schlussel_existiert
+    state: 'off'
+  actions:
+  - if:
+    - condition: template
+      value_template: '{{ trigger.id == ''ha_start'' }}'
+    then:
+    - delay: 00:00:15
+  - action: shell_command.hagit_init_keys
+  mode: single
+- id: '1758874422023'
+  alias: HAGit - 2 | Authentifizierung prüfen
+  description: ''
+  triggers:
+  - event: start
+    trigger: homeassistant
+    id: ha_start
+  - trigger: time_pattern
+    minutes: /5
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.hagit_privater_schlussel_existiert
+    state: 'on'
+  actions:
+  - if:
+    - condition: template
+      value_template: '{{ trigger.id == ''ha_start'' }}'
+    then:
+    - delay: 00:00:20
+  - data: {}
+    response_variable: ssh_auth_response
+    action: shell_command.hagit_check_auth
+  - if:
+    - condition: template
+      value_template: '{{ ssh_auth_response[''returncode''] == 0 }}'
+    then:
+    - target:
+        entity_id: input_boolean.hagit_authentifizierung_erfolgreich
+      action: input_boolean.turn_on
+    - action: repairs.remove
+      data:
+        issue_id: ha_git_auth_failed
+    else:
+    - target:
+        entity_id: input_boolean.hagit_authentifizierung_erfolgreich
+      action: input_boolean.turn_off
+    - data:
+        title: 'HAGit: Authentifizierung fehlgeschlagen'
+        description: 'Die Authentifizierung für GitLab ist fehlgeschlagen:
+
+
+          `{{ ssh_auth_response[''stderr''] }}`
+
+
+          Die wahrscheinlichste Ursache ist, dass der öffentliche Schlüssel
+
+          `id_rsa_github.pub` nicht in GitHub hinterlegt ist.
+
+
+          Füge den öffentlichen Schlüssel unter folgendem Link hinzu:
+
+
+          [https://github.com/settings/ssh/new](https://github.com/settings/ssh/new)'
+        issue_id: ha_git_auth_failed
+        severity: critical
+        domain: homeassistant
+      action: repairs.create
+  mode: single
+- id: '1758879740596'
+  alias: HAGit - 5 | Änderungen commiten
+  description: ''
+  triggers:
+  - event: start
+    trigger: homeassistant
+  - trigger: state
+    entity_id: binary_sensor.hagit_git_status
+    to: 'on'
+    for: 00:02:00
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.hagit_git_initialisiert
+    state: 'on'
+  - condition: state
+    entity_id: binary_sensor.hagit_gitignore_existiert
+    state: 'on'
+  - condition: state
+    entity_id: binary_sensor.hagit_privater_schlussel_existiert
+    state: 'on'
+  - condition: state
+    entity_id: input_boolean.hagit_authentifizierung_erfolgreich
+    state: 'on'
+  actions:
+  - if:
+    - condition: template
+      value_template: '{{ trigger.id == ''ha_start'' }}'
+    then:
+    - delay: 00:00:30
+  - action: shell_command.hagit_commit_changes
+    response_variable: commit_changes_response
+    data: {}
+  - action: system_log.write
+    data:
+      level: info
+      message: '{{ commit_changes_response }}'
+  mode: single
+- id: '1758880242528'
+  alias: HAGit - 4 | Repository initialisieren
+  description: ''
+  triggers:
+  - event: start
+    trigger: homeassistant
+  - entity_id: input_boolean.hagit_authentifizierung_erfolgreich
+    from: 'off'
+    to: 'on'
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.hagit_git_initialisiert
+    state: 'off'
+  - condition: state
+    entity_id: binary_sensor.hagit_gitignore_existiert
+    state: 'on'
+  - condition: state
+    entity_id: binary_sensor.hagit_privater_schlussel_existiert
+    state: 'on'
+  - condition: state
+    entity_id: input_boolean.hagit_authentifizierung_erfolgreich
+    state: 'on'
+  actions:
+  - if:
+    - condition: template
+      value_template: '{{ trigger.id == ''ha_start'' }}'
+    then:
+    - delay: 00:00:25
+  - action: shell_command.hagit_init_repo
+    response_variable: init_repo_response
+    data: {}
+  - action: system_log.write
+    data:
+      level: info
+      message: '{{ init_repo_response }}'
+  mode: single
+- id: '1758986597447'
+  alias: HAGit - 3 | .gitignore schreiben
+  description: ''
+  triggers:
+  - event: start
+    trigger: homeassistant
+  - event_type: automation_reloaded
+    trigger: event
+  actions:
+  - action: shell_command.hagit_write_gitignore
+    data:
+      content: '# Ignore everything
+
+        *
+
+
+        # But don''t ignore directories, so Git can traverse them
+
+        !*/
+
+
+        # Explicitly include these files and folders
+
+        !/.storage/lovelace.dashboard_*
+
+        !/shell_commands/**
+
+        !.gitkeep
+
+        !/automations.yaml
+
+        !/configuration.yaml
+
+        !/scenes.yaml
+
+        !/scripts.yaml
+
+        '
+  mode: single
+- id: '1773090275291'
+  alias: Chromium Heartbeat
+  description: ''
+  triggers:
+  - trigger: time_pattern
+    minutes: /5
+  conditions:
+  - condition: time
+    weekday:
+    - mon
+    - tue
+    - wed
+    - thu
+    - fri
+    after: 07:00:00
+    before: '18:00:00'
+  - condition: state
+    entity_id: device_tracker.mb_m1_dm
+    state: home
+  actions:
+  - action: shell_command.keep_chromium_awake
+  mode: single
+- id: '1776797661447'
+  alias: Garten | Bewässerung starten
+  description: ''
+  triggers:
+  - trigger: time
+    at: '11:00:00'
+  - trigger: time
+    at: '13:00:00'
+  - trigger: time
+    at: '19:00:00'
+  actions:
+  - target:
+      entity_id: switch.garten_bewasserung_schalter
+    action: switch.turn_on
+    data: {}
+  - data:
+      message: 'Garten | Bewässerung gestartet
+
+        '
+      data:
+        tag: '{{ this.entity_id }}'
+        ttl: 0
+        priority: high
+        notification_icon: mdi:watering-can-outline
+    action: notify.mobile_app_obsidian
+  mode: single
+  max: 10
+- id: '1776798681627'
+  alias: Garten | Bewässerung beendet
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - switch.garten_bewasserung_schalter
+    to:
+    - 'on'
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+  conditions: []
+  actions:
+  - action: switch.turn_off
+    target:
+      entity_id:
+      - switch.garten_bewasserung_schalter
+    data: {}
+  - data:
+      message: 'Garten | Bewässerung beendet
+
+        '
+      data:
+        tag: '{{ this.entity_id }}'
+        ttl: 0
+        priority: high
+        notification_icon: mdi:watering-can-outline
+    action: notify.mobile_app_obsidian
+  mode: single
+  max: 10
+- id: '1778272911742'
+  alias: PlayBee | Start media when NFC tag is scanned
+  description: ''
+  triggers:
+  - trigger: event
+    event_type: tag_scanned
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.event.data.device_id == ''5027c31bfe14b567944562578ee195bd''
+      }}'
+  actions:
+  - action: script.playbee_play_media_based_on_nfc_tag
+    data:
+      tag_uid: '{{ trigger.event.data.tag_id }}'
+  mode: restart
+- id: '1778873511403'
+  alias: musiCosy 2 | Batterie Benachrichtigung
+  description: ''
+  triggers:
+  - trigger: time
+    at: 06:30:00
+  - trigger: time
+    at: '18:00:00'
+  conditions:
+  - condition: numeric_state
+    entity_id: sensor.musicosy_2_battery_level
+    below: 60
+  actions:
+  - data:
+      title: musiCosy 2
+      message: '{{ states(''sensor.musicosy_2_battery_level'') }}%'
+    action: notify.mobile_app_obsidian
+  mode: single
+- id: '1780667047390'
+  alias: PlayBee | Stop media when NFC tag is removed
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.playbee_tagreader_card_present
+    from: 'on'
+    to: 'off'
+  conditions:
+  - condition: template
+    value_template: '{{ states(''input_text.playbee_active_tag_uid'') not in ['''',
+      ''unknown'', ''unavailable''] }}'
+  actions:
+  - variables:
+      captured_tag_uid: '{{ states(''input_text.playbee_active_tag_uid'') }}'
+      captured_position: "{{ [0, (\n      state_attr('media_player.googlehome2758',
+        'media_position') | float(0)\n      + (now() - state_attr('media_player.googlehome2758',
+        'media_position_updated_at'))\n        .total_seconds()\n    ) | int] | max
+        }}"
+  - action: music_assistant.get_queue
+    target:
+      entity_id: media_player.googlehome2758
+    response_variable: queue_data
+  - action: script.playbee_stop_media
+    data:
+      captured_tag_uid: '{{ captured_tag_uid }}'
+      captured_queue_id: '{{ queue_data[''media_player.googlehome2758''][''queue_id'']
+        }}'
+      captured_track_id: '{{ queue_data[''media_player.googlehome2758''][''current_item''][''queue_item_id'']
+        }}'
+      captured_position: '{{ captured_position }}'
+  mode: single
+- id: '1780866283580'
+  alias: PlayBee | Start media when NFC tag is scanned (without resume)
+  description: ''
+  triggers:
+  - trigger: event
+    event_type: tag_scanned
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.event.data.device_id == ''5027c31bfe14b567944562578ee195bd''
+      }}'
+  actions:
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.playbee_lookup_tag_uid
+    data:
+      value: '{{ trigger.event.data.tag_id }}'
+  - action: homeassistant.update_entity
+    target:
+      entity_id: sensor.playbee_tag_lookup
+  - delay: 00:00:01
+  - action: script.playbee_play_media_based_on_nfc_tag
+  mode: restart
+- id: '1780867341845'
+  alias: PlayBee | Stop media when NFC tag is removed (without resume)
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.playbee_tagreader_card_present
+    to: 'off'
+  conditions:
+  - condition: template
+    value_template: '{{ states(''input_text.playbee_active_tag_uid'') not in ['''',
+      ''unknown'', ''unavailable''] }}'
+  actions:
+  - action: script.playbee_stop_media
+  mode: single
+- id: '1780944090810'
+  alias: PlayBee | NFC event router
+  description: ''
+  triggers:
+  - trigger: event
+    event_type: tag_scanned
+    id: scanned
+  - trigger: state
+    entity_id: binary_sensor.playbee_tagreader_card_present
+    from: 'on'
+    to: 'off'
+    id: removed
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.id == ''scanned'' }}'
+      - condition: template
+        value_template: '{{ trigger.event.data.device_id == ''5027c31bfe14b567944562578ee195bd''
+          }}'
+      sequence:
+      - if:
+        - condition: template
+          value_template: '{{ states(''input_text.playbee_active_tag_uid'') not in
+            ['''', ''unknown'', ''unavailable''] }}'
+        then:
+        - action: script.playbee_stop_media
+          data:
+            reason: before_start
+      - wait_template: '{{ states(''media_player.googlehome2758'') not in [''playing'',
+          ''buffering'', ''paused''] }}'
+        timeout: 00:00:04
+        continue_on_timeout: true
+      - action: script.playbee_play_media_based_on_nfc_tag
+        data:
+          tag_uid: '{{ trigger.event.data.tag_id }}'
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.id == ''removed'' }}'
+      - condition: template
+        value_template: '{{ states(''input_text.playbee_active_tag_uid'') not in ['''',
+          ''unknown'', ''unavailable''] }}'
+      sequence:
+      - action: script.playbee_stop_media
+        data:
+          reason: card_removed
+  mode: queued
+  max: 20
