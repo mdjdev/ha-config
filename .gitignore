@@ -120,8 +120,6 @@ backups/
 addons_config/*/data/
 addons_config/*/logs/
 
-watchman_report.txt
-
 ###############################################################################
 # Zigbee, MQTT, and integration state
 ###############################################################################
