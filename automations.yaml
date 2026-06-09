@@ -1020,21 +1020,6 @@
     action: notify.mobile_app_obsidian
   mode: single
   max: 10
-- id: '1778272911742'
-  alias: PlayBee | Start media when NFC tag is scanned
-  description: ''
-  triggers:
-  - trigger: event
-    event_type: tag_scanned
-  conditions:
-  - condition: template
-    value_template: '{{ trigger.event.data.device_id == ''5027c31bfe14b567944562578ee195bd''
-      }}'
-  actions:
-  - action: script.playbee_play_media_based_on_nfc_tag
-    data:
-      tag_uid: '{{ trigger.event.data.tag_id }}'
-  mode: restart
 - id: '1778873511403'
   alias: musiCosy 2 | Batterie Benachrichtigung
   description: ''
@@ -1052,74 +1037,6 @@
       title: musiCosy 2
       message: '{{ states(''sensor.musicosy_2_battery_level'') }}%'
     action: notify.mobile_app_obsidian
-  mode: single
-- id: '1780667047390'
-  alias: PlayBee | Stop media when NFC tag is removed
-  description: ''
-  triggers:
-  - trigger: state
-    entity_id: binary_sensor.playbee_tagreader_card_present
-    from: 'on'
-    to: 'off'
-  conditions:
-  - condition: template
-    value_template: '{{ states(''input_text.playbee_active_tag_uid'') not in ['''',
-      ''unknown'', ''unavailable''] }}'
-  actions:
-  - variables:
-      captured_tag_uid: '{{ states(''input_text.playbee_active_tag_uid'') }}'
-      captured_position: "{{ [0, (\n      state_attr('media_player.googlehome2758',
-        'media_position') | float(0)\n      + (now() - state_attr('media_player.googlehome2758',
-        'media_position_updated_at'))\n        .total_seconds()\n    ) | int] | max
-        }}"
-  - action: music_assistant.get_queue
-    target:
-      entity_id: media_player.googlehome2758
-    response_variable: queue_data
-  - action: script.playbee_stop_media
-    data:
-      captured_tag_uid: '{{ captured_tag_uid }}'
-      captured_queue_id: '{{ queue_data[''media_player.googlehome2758''][''queue_id'']
-        }}'
-      captured_track_id: '{{ queue_data[''media_player.googlehome2758''][''current_item''][''queue_item_id'']
-        }}'
-      captured_position: '{{ captured_position }}'
-  mode: single
-- id: '1780866283580'
-  alias: PlayBee | Start media when NFC tag is scanned (without resume)
-  description: ''
-  triggers:
-  - trigger: event
-    event_type: tag_scanned
-  conditions:
-  - condition: template
-    value_template: '{{ trigger.event.data.device_id == ''5027c31bfe14b567944562578ee195bd''
-      }}'
-  actions:
-  - action: input_text.set_value
-    target:
-      entity_id: input_text.playbee_lookup_tag_uid
-    data:
-      value: '{{ trigger.event.data.tag_id }}'
-  - action: homeassistant.update_entity
-    target:
-      entity_id: sensor.playbee_tag_lookup
-  - delay: 00:00:01
-  - action: script.playbee_play_media_based_on_nfc_tag
-  mode: restart
-- id: '1780867341845'
-  alias: PlayBee | Stop media when NFC tag is removed (without resume)
-  description: ''
-  triggers:
-  - trigger: state
-    entity_id: binary_sensor.playbee_tagreader_card_present
-    to: 'off'
-  conditions:
-  - condition: template
-    value_template: '{{ states(''input_text.playbee_active_tag_uid'') not in ['''',
-      ''unknown'', ''unavailable''] }}'
-  actions:
-  - action: script.playbee_stop_media
   mode: single
 - id: '1780944090810'
   alias: PlayBee | NFC event router
