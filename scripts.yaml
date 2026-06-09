@@ -38,9 +38,15 @@ playbee_play_media_based_on_nfc_tag:
       track_id: '{{ resume_data.track_id if resume_data else none }}'
       position: '{{ resume_data.position | int(0) if resume_data else 0 }}'
       queue_id: '{{ resume_data.queue_id if resume_data else none }}'
-      do_resume: "{{ resume == true\n   and resume_data is not none\n   and track_id
-        not in [none, '', 'unknown', 'unavailable']\n   and position | int(0) > 0\n
-        \  and queue_id not in [none, '', 'unknown', 'unavailable'] }}"
+      playlist_provider: "{% if '://' in media_url %}\n  {{ media_url.split('://',
+        1)[0] }}\n{% else %}\n  {{ '' }}\n{% endif %}"
+      playlist_item_id: "{% set path = media_url.split('://', 1)[1] if '://' in media_url
+        else '' %} {% set segments = path.split('/') %} {% if segments | length >=
+        2 and segments[0] == 'playlist' %}\n  {{ segments[1] }}\n{% else %}\n  {{
+        '' }}\n{% endif %}"
+      do_resume: "{{\n  resume == true\n  and resume_data is not none\n  and track_id
+        not in [none, '', 'unknown', 'unavailable']\n  and position | int(0) > 0\n
+        \ and queue_id not in [none, '', 'unknown', 'unavailable']\n}}"
       media_player: media_player.googlehome2758
   - if:
     - condition: template
@@ -76,20 +82,50 @@ playbee_play_media_based_on_nfc_tag:
     then:
     - if:
       - condition: template
-        value_template: '{{ media_object is none }}'
+        value_template: "{{\n  playlist_provider in ['', 'unknown', 'unavailable']\n
+          \ or playlist_item_id in ['', 'unknown', 'unavailable']\n}}"
       then:
       - action: system_log.write
         data:
           level: warning
           logger: playbee.nfc
-          message: Could not resolve playlist object for resume. media_url={{ media_url
+          message: Could not parse playlist URI for resume. media_url={{ media_url
             }}
-      - stop: Missing media object
+      - stop: Invalid playlist URI
+    - action: rest_command.playbee_ma_get_playlist_tracks
+      data:
+        item_id: '{{ playlist_item_id }}'
+        provider_instance_id_or_domain: '{{ playlist_provider }}'
+      response_variable: playlist_tracks_response
+    - variables:
+        playlist_tracks_list: "{% set content = playlist_tracks_response.content if
+          playlist_tracks_response is mapping else none %} {% if content is sequence
+          and content is not string %}\n  {{ content }}\n{% elif content is mapping
+          and content.result is defined and content.result is sequence and content.result
+          is not string %}\n  {{ content.result }}\n{% elif content is string %}\n
+          \ {% set parsed = content | from_json([]) %}\n  {% if parsed is sequence
+          and parsed is not string %}\n    {{ parsed }}\n  {% elif parsed is mapping
+          and parsed.result is defined and parsed.result is sequence and parsed.result
+          is not string %}\n    {{ parsed.result }}\n  {% else %}\n    {{ [] }}\n
+          \ {% endif %}\n{% else %}\n  {{ [] }}\n{% endif %}"
+        playlist_tracks_payload: '{{ playlist_tracks_list | tojson }}'
+        playlist_tracks_count: '{{ playlist_tracks_list | count }}'
+    - if:
+      - condition: template
+        value_template: '{{ playlist_tracks_count | int(0) == 0 }}'
+      then:
+      - action: system_log.write
+        data:
+          level: warning
+          logger: playbee.nfc
+          message: Playlist track lookup returned no items. media_url={{ media_url
+            }}
+      - stop: Empty playlist track list
     - action: rest_command.playbee_ma_resume
       data:
         queue_id: '{{ queue_id }}'
         track_id: '{{ track_id }}'
-        media_url: '{{ media_url }}'
+        media_payload: '{{ playlist_tracks_payload }}'
       response_variable: resume_response
     - wait_template: '{{ states(media_player) in [''playing'', ''buffering''] }}'
       timeout: 00:00:10
@@ -135,7 +171,9 @@ playbee_stop_media:
       tag_uid: '{{ active_tag_uid }}'
     response_variable: db_response
   - variables:
-      tag: '{{ db_response[''stdout''] | from_json }}'
+      tag: "{% if db_response.returncode == 0 and db_response.stdout | trim != ''
+        %}\n  {{ db_response.stdout | from_json }}\n{% else %}\n  {{ {'found': false}
+        }}\n{% endif %}"
       should_save: '{{ tag.found | default(false) and tag.resume | default(false)
         }}'
       corrected_position: "{% set pos = state_attr(media_player, 'media_position')
@@ -152,16 +190,19 @@ playbee_stop_media:
       response_variable: queue_data
     - if:
       - condition: template
-        value_template: "{{ queue_data.get(media_player) is not none\n   and queue_data[media_player].get('current_item')
-          is not none\n   and queue_data[media_player]['current_item'].get('queue_item_id')
-          is not none\n   and queue_data[media_player].get('queue_id') is not none
-          }}"
+        value_template: "{{\n  queue_data.get(media_player) is not none\n  and queue_data[media_player].get('current_item')
+          is not none\n  and queue_data[media_player].get('queue_id') is not none\n
+          \ and (\n    queue_data[media_player]['current_item'].get('media_item',
+          {}).get('uri') is not none\n    or queue_data[media_player]['current_item'].get('uri')
+          is not none\n    or queue_data[media_player]['current_item'].get('queue_item_id')
+          is not none\n  )\n}}"
       then:
       - action: shell_command.playbee_db_save_resume
         data:
           tag_uid: '{{ active_tag_uid }}'
-          track_id: '{{ queue_data[media_player][''current_item''][''queue_item_id'']
-            }}'
+          track_id: "{{\n  queue_data[media_player]['current_item'].get('media_item',
+            {}).get('uri')\n  or queue_data[media_player]['current_item'].get('uri')\n
+            \ or queue_data[media_player]['current_item'].get('queue_item_id')\n}}"
           position: '{{ corrected_position }}'
           queue_id: '{{ queue_data[media_player][''queue_id''] }}'
     else:
