@@ -184,7 +184,7 @@ playbee_stop_media:
         false} }}\n{% endif %}"
       db_tag_found: '{{ db_tag.found | default(false) }}'
       db_tag_name: '{{ db_tag.name | default('''') }}'
-      should_save: '{{ db_tag_found and db_tag.resume | default(false) }}'
+      should_save: '{{ db_tag_found }}'
   - if:
     - condition: template
       value_template: '{{ should_save }}'
@@ -257,8 +257,8 @@ playbee_stop_media:
       data:
         level: debug
         logger: playbee.nfc
-        message: 'PlayBee stop: resume disabled or tag not found. active_tag_uid={{
-          active_tag_uid }}, db_tag={{ db_tag }}'
+        message: 'PlayBee stop: tag not found in DB. active_tag_uid={{ active_tag_uid
+          }}, db_tag={{ db_tag }}'
   - action: media_player.media_stop
     target:
       entity_id: '{{ media_player }}'
