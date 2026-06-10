@@ -1052,35 +1052,39 @@
     id: removed
   conditions: []
   actions:
+  - variables:
+      active_tag_uid: '{{ states(''input_text.playbee_active_tag_uid'') }}'
+      has_active_tag: '{{ active_tag_uid not in ['''', ''unknown'', ''unavailable'']
+        }}'
+      scanned_tag_uid: "{% if trigger.id == 'scanned'\n      and trigger.event is
+        defined\n      and trigger.event.data is defined\n      and trigger.event.data.tag_id
+        is defined %}\n  {{ trigger.event.data.tag_id }}\n{% else %}\n  {{ '' }}\n{%
+        endif %}"
+      scanned_device_id: "{% if trigger.id == 'scanned'\n      and trigger.event is
+        defined\n      and trigger.event.data is defined\n      and trigger.event.data.device_id
+        is defined %}\n  {{ trigger.event.data.device_id }}\n{% else %}\n  {{ '' }}\n{%
+        endif %}"
   - choose:
     - conditions:
       - condition: template
         value_template: '{{ trigger.id == ''scanned'' }}'
       - condition: template
-        value_template: '{{ trigger.event.data.device_id == ''5027c31bfe14b567944562578ee195bd''
+        value_template: '{{ scanned_device_id == ''5027c31bfe14b567944562578ee195bd''
+          }}'
+      - condition: template
+        value_template: '{{ not has_active_tag }}'
+      - condition: template
+        value_template: '{{ scanned_tag_uid not in ['''', ''unknown'', ''unavailable'']
           }}'
       sequence:
-      - if:
-        - condition: template
-          value_template: '{{ states(''input_text.playbee_active_tag_uid'') not in
-            ['''', ''unknown'', ''unavailable''] }}'
-        then:
-        - action: script.playbee_stop_media
-          data:
-            reason: before_start
-      - wait_template: '{{ states(''media_player.googlehome2758'') not in [''playing'',
-          ''buffering'', ''paused''] }}'
-        timeout: 00:00:04
-        continue_on_timeout: true
       - action: script.playbee_play_media_based_on_nfc_tag
         data:
-          tag_uid: '{{ trigger.event.data.tag_id }}'
+          tag_uid: '{{ scanned_tag_uid }}'
     - conditions:
       - condition: template
         value_template: '{{ trigger.id == ''removed'' }}'
       - condition: template
-        value_template: '{{ states(''input_text.playbee_active_tag_uid'') not in ['''',
-          ''unknown'', ''unavailable''] }}'
+        value_template: '{{ has_active_tag }}'
       sequence:
       - action: script.playbee_stop_media
         data:
