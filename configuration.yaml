@@ -178,6 +178,22 @@ shell_command:
 
 
 rest_command:
+  playbee_ma_get_queue:
+    url: !secret playbee_ma_api_url
+    method: POST
+    headers:
+      accept: "application/json, text/html"
+      authorization: !secret playbee_ma_token
+    payload: >-
+      {
+        "message_id": "1",
+        "command": "player_queues/get",
+        "args": {
+          "queue_id": "{{ queue_id }}"
+        }
+      }
+    content_type: "application/json; charset=utf-8"
+    
   playbee_ma_get_playlist_tracks:
     url: !secret playbee_ma_api_url
     method: POST
