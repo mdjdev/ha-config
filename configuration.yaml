@@ -194,7 +194,7 @@ rest_command:
       }
     content_type: "application/json; charset=utf-8"
     
-  playbee_ma_get_playlist_tracks:
+  playbee_ma_resolve_item_by_uri:
     url: !secret playbee_ma_api_url
     method: POST
     headers:
@@ -203,10 +203,10 @@ rest_command:
     payload: >-
       {
         "message_id": "1",
-        "command": "music/playlists/playlist_tracks",
+        "command": "music/item_by_uri",
         "args": {
-          "item_id": "{{ item_id }}",
-          "provider_instance_id_or_domain": "{{ provider_instance_id_or_domain }}"
+          "uri": "{{ uri }}",
+          "allow_update_metadata": true
         }
       }
     content_type: "application/json; charset=utf-8"
@@ -223,7 +223,7 @@ rest_command:
         "command": "player_queues/play_media",
         "args": {
           "queue_id": "{{ queue_id }}",
-          "media": {{ media_payload }},
+          "media": "{{ media_url }}",
           "radio_mode": false,
           "start_item": "{{ track_id }}"
         }

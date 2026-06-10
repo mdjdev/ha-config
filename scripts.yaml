@@ -38,12 +38,6 @@ playbee_play_media_based_on_nfc_tag:
       track_id: '{{ resume_data.track_id if resume_data else none }}'
       position: '{{ resume_data.position | int(0) if resume_data else 0 }}'
       queue_id: '{{ resume_data.queue_id if resume_data else none }}'
-      playlist_provider: "{% if '://' in media_url %}\n  {{ media_url.split('://',
-        1)[0] }}\n{% else %}\n  {{ '' }}\n{% endif %}"
-      playlist_item_id: "{% set path = media_url.split('://', 1)[1] if '://' in media_url
-        else '' %} {% set segments = path.split('/') %} {% if segments | length >=
-        2 and segments[0] == 'playlist' %}\n  {{ segments[1] }}\n{% else %}\n  {{
-        '' }}\n{% endif %}"
       do_resume: "{{\n  resume == true\n  and resume_data is not none\n  and track_id
         not in [none, '', 'unknown', 'unavailable']\n  and position | int(0) > 0\n
         \ and queue_id not in [none, '', 'unknown', 'unavailable']\n}}"
@@ -80,62 +74,47 @@ playbee_play_media_based_on_nfc_tag:
     - condition: template
       value_template: '{{ do_resume }}'
     then:
-    - if:
-      - condition: template
-        value_template: "{{\n  playlist_provider in ['', 'unknown', 'unavailable']\n
-          \ or playlist_item_id in ['', 'unknown', 'unavailable']\n}}"
-      then:
-      - action: system_log.write
-        data:
-          level: warning
-          logger: playbee.nfc
-          message: Could not parse playlist URI for resume. media_url={{ media_url
-            }}
-      - stop: Invalid playlist URI
-    - action: rest_command.playbee_ma_get_playlist_tracks
+    - action: rest_command.playbee_ma_resolve_item_by_uri
       data:
-        item_id: '{{ playlist_item_id }}'
-        provider_instance_id_or_domain: '{{ playlist_provider }}'
-      response_variable: playlist_tracks_response
+        uri: '{{ media_url }}'
+      response_variable: resolved_item_response
     - if:
       - condition: template
-        value_template: '{{ playlist_tracks_response.status == 200 }}'
+        value_template: '{{ resolved_item_response.status == 200 }}'
       then:
       - variables:
-          playlist_tracks_raw: "{% set content = playlist_tracks_response.content
-            if playlist_tracks_response is mapping else none %} {% if content is sequence
-            and content is not string %}\n  {{ content }}\n{% elif content is mapping
-            and content.result is defined and content.result is sequence and content.result
-            is not string %}\n  {{ content.result }}\n{% elif content is string %}\n
-            \ {% set parsed = content | from_json([]) %}\n  {% if parsed is sequence
-            and parsed is not string %}\n    {{ parsed }}\n  {% elif parsed is mapping
-            and parsed.result is defined and parsed.result is sequence and parsed.result
-            is not string %}\n    {{ parsed.result }}\n  {% else %}\n    {{ [] }}\n
-            \ {% endif %}\n{% else %}\n  {{ [] }}\n{% endif %}"
-          playlist_tracks_payload: "{% set ns = namespace(uris=[]) %} {% for item
-            in playlist_tracks_raw %}\n  {% if item.uri is defined and item.uri %}\n
-            \   {% set ns.uris = ns.uris + [item.uri] %}\n  {% endif %}\n{% endfor
-            %} {{ ns.uris | tojson }}"
-          playlist_tracks_count: "{% set ns = namespace(count=0) %} {% for item in
-            playlist_tracks_raw %}\n  {% if item.uri is defined and item.uri %}\n
-            \   {% set ns.count = ns.count + 1 %}\n  {% endif %}\n{% endfor %} {{
-            ns.count }}"
+          resolved_item: "{% set content = resolved_item_response.content if resolved_item_response
+            is mapping else none %} {% if content is mapping %}\n  {{ content }}\n{%
+            elif content is string %}\n  {{ content | from_json({}, default={}) }}\n{%
+            else %}\n  {{ {} }}\n{% endif %}"
+          resolved_media_url: '{{ resolved_item.get(''uri'', '''') }}'
+          resolved_media_provider: '{{ resolved_item.get(''provider'', '''') }}'
+          resolved_media_type: '{{ resolved_item.get(''media_type'', '''') }}'
       - if:
         - condition: template
-          value_template: '{{ playlist_tracks_count | int(0) == 0 }}'
+          value_template: "{{\n  resolved_media_url in ['', 'unknown', 'unavailable']\n
+            \ or resolved_media_provider != 'library'\n  or resolved_media_type !=
+            'playlist'\n}}"
         then:
         - action: system_log.write
           data:
             level: warning
             logger: playbee.nfc
-            message: Playlist track lookup returned no items. media_url={{ media_url
-              }}
-        - stop: Empty playlist track list
+            message: Could not resolve internal library playlist URI. media_url={{
+              media_url }}, resolved_item={{ resolved_item }}
+        - stop: Invalid resolved playlist URI
+      - action: system_log.write
+        data:
+          level: info
+          logger: playbee.nfc
+          message: 'PlayBee resuming: tag={{ tag_uid }}, external_media={{ media_url
+            }}, resolved_media={{ resolved_media_url }}, track={{ track_id }}, position={{
+            position }}'
       - action: rest_command.playbee_ma_resume
         data:
           queue_id: '{{ queue_id }}'
-          track_id: '{{ track_iu }}'
-          media_payload: '{{ playlist_tracks_payload }}'
+          track_id: '{{ track_id }}'
+          media_url: '{{ resolved_media_url }}'
         response_variable: resume_response
       - if:
         - condition: template
@@ -160,8 +139,8 @@ playbee_play_media_based_on_nfc_tag:
         data:
           level: error
           logger: playbee.nfc
-          message: 'Playlist track lookup failed: {{ playlist_tracks_response }}'
-      - stop: Playlist lookup failed
+          message: 'URI resolve failed: {{ resolved_item_response }}'
+      - stop: URI resolve failed
     else:
     - action: shell_command.playbee_db_clear_resume
       data:
