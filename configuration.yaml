@@ -184,9 +184,11 @@ rest_command:
     headers:
       accept: "application/json, text/html"
       authorization: !secret playbee_ma_token
+      cache-control: "no-cache"
+      pragma: "no-cache"
     payload: >-
       {
-        "message_id": "1",
+        "message_id": "{{ now().timestamp() | int }}",
         "command": "player_queues/get",
         "args": {
           "queue_id": "{{ queue_id }}"
@@ -202,7 +204,7 @@ rest_command:
       authorization: !secret playbee_ma_token
     payload: >-
       {
-        "message_id": "1",
+        "message_id": "{{ now().timestamp() | int }}",
         "command": "music/item_by_uri",
         "args": {
           "uri": "{{ uri }}",
@@ -219,7 +221,7 @@ rest_command:
       authorization: !secret playbee_ma_token
     payload: >-
       {
-        "message_id": "1",
+        "message_id": "{{ now().timestamp() | int }}",
         "command": "player_queues/play_media",
         "args": {
           "queue_id": "{{ queue_id }}",

@@ -184,10 +184,6 @@ playbee_stop_media:
         }}\n{% endif %}"
       should_save: '{{ tag.found | default(false) and tag.resume | default(false)
         }}'
-      corrected_position: "{% set pos = state_attr(media_player, 'media_position')
-        | float(0) %} {% set updated = state_attr(media_player, 'media_position_updated_at')
-        %} {% if updated %}\n  {{ [0, (pos + (now() - updated).total_seconds()) |
-        int] | max }}\n{% else %}\n  {{ pos | int(0) }}\n{% endif %}"
   - if:
     - condition: template
       value_template: '{{ should_save }}'
@@ -196,34 +192,47 @@ playbee_stop_media:
       data:
         queue_id: '{{ queue_id }}'
       response_variable: queue_response
-    - variables:
-        queue_payload: "{% set content = queue_response.content if queue_response
-          is mapping else none %} {% if content is mapping %}\n  {{ content }}\n{%
-          elif content is string %}\n  {{ content | from_json({}, default={}) }}\n{%
-          else %}\n  {{ {} }}\n{% endif %}"
-        current_item: '{{ queue_payload.current_item if queue_payload is mapping and
-          queue_payload.current_item is defined else {} }}'
     - if:
       - condition: template
-        value_template: "{{\n  queue_payload.get('queue_id') is not none\n  and current_item
-          != {}\n  and (\n    current_item.get('uri') is not none\n    or current_item.get('media_item',
-          {}).get('uri') is not none\n    or current_item.get('streamdetails', {}).get('item_id')
-          is not none\n    or current_item.get('queue_item_id') is not none\n  )\n}}"
+        value_template: '{{ queue_response.status == 200 }}'
       then:
-      - action: shell_command.playbee_db_save_resume
-        data:
-          tag_uid: '{{ active_tag_uid }}'
-          track_id: "{{\n  current_item.get('media_item', {}).get('uri')\n  or current_item.get('uri')\n
-            \ or current_item.get('streamdetails', {}).get('item_id')\n  or current_item.get('queue_item_id')\n}}"
-          position: '{{ corrected_position }}'
-          queue_id: '{{ queue_payload.get(''queue_id'') }}'
+      - variables:
+          queue_payload: "{% set content = queue_response.content if queue_response
+            is mapping else none %} {% if content is mapping %}\n  {{ content }}\n{%
+            elif content is string %}\n  {{ content | from_json({}, default={}) }}\n{%
+            else %}\n  {{ {} }}\n{% endif %}"
+          current_item: '{{ queue_payload.current_item if queue_payload is mapping
+            and queue_payload.current_item is defined else {} }}'
+          resume_track_id: "{{\n  current_item.get('media_item', {}).get('uri')\n
+            \ or current_item.get('uri')\n  or current_item.get('streamdetails', {}).get('item_id')\n
+            \ or current_item.get('queue_item_id')\n  or ''\n}}"
+          resume_queue_id: '{{ queue_payload.get(''queue_id'', '''') }}'
+          resume_position: '{{ queue_payload.get(''elapsed_time'', 0) | int(0) }}'
+      - if:
+        - condition: template
+          value_template: "{{\n  resume_queue_id not in ['', 'unknown', 'unavailable']\n
+            \ and resume_track_id not in ['', 'unknown', 'unavailable']\n}}"
+        then:
+        - action: shell_command.playbee_db_save_resume
+          data:
+            tag_uid: '{{ active_tag_uid }}'
+            track_id: '{{ resume_track_id }}'
+            position: '{{ resume_position }}'
+            queue_id: '{{ resume_queue_id }}'
+        else:
+        - action: system_log.write
+          data:
+            level: warning
+            logger: playbee.nfc
+            message: 'PlayBee stop: queue lookup had no resumable current item. queue_response={{
+              queue_response }}'
       else:
       - action: system_log.write
         data:
           level: warning
           logger: playbee.nfc
-          message: 'PlayBee stop: queue lookup had no resumable current item. queue_response={{
-            queue_response }}'
+          message: 'PlayBee stop: queue lookup failed with status={{ queue_response.status
+            }}. queue_response={{ queue_response }}'
     else:
     - action: shell_command.playbee_db_clear_resume
       data:
