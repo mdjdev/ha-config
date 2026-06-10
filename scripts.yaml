@@ -167,8 +167,8 @@ playbee_stop_media:
       active_tag_uid: '{{ states(''input_text.playbee_active_tag_uid'') }}'
       has_active_tag: '{{ active_tag_uid not in ['''', ''unknown'', ''unavailable'']
         }}'
-      queue_id: '{{ state_attr(media_player, ''active_queue'') or state_attr(media_player,
-        ''mass_queue_id'') or media_player }}'
+      queue_id: "{{\n  state_attr(media_player, 'active_queue')\n  or state_attr(media_player,
+        'mass_queue_id')\n  or media_player\n}}"
   - if:
     - condition: template
       value_template: '{{ not has_active_tag }}'
@@ -194,20 +194,24 @@ playbee_stop_media:
       response_variable: queue_response
     - if:
       - condition: template
-        value_template: '{{ queue_response.status == 200 }}'
+        value_template: '{{ queue_response is mapping and queue_response.status ==
+          200 }}'
       then:
       - variables:
           queue_payload: "{% set content = queue_response.content if queue_response
             is mapping else none %} {% if content is mapping %}\n  {{ content }}\n{%
             elif content is string %}\n  {{ content | from_json({}, default={}) }}\n{%
             else %}\n  {{ {} }}\n{% endif %}"
-          current_item: '{{ queue_payload.current_item if queue_payload is mapping
-            and queue_payload.current_item is defined else {} }}'
-          resume_track_id: "{{\n  current_item.get('media_item', {}).get('uri')\n
-            \ or current_item.get('uri')\n  or current_item.get('streamdetails', {}).get('item_id')\n
-            \ or current_item.get('queue_item_id')\n  or ''\n}}"
-          resume_queue_id: '{{ queue_payload.get(''queue_id'', '''') }}'
-          resume_position: '{{ queue_payload.get(''elapsed_time'', 0) | int(0) }}'
+          queue_payload_safe: '{{ queue_payload if queue_payload is mapping else {}
+            }}'
+          current_item: '{% set item = queue_payload_safe.get(''current_item'') %}
+            {{ item if item is mapping else {} }}'
+          media_item: '{% set item = current_item.get(''media_item'') %} {{ item if
+            item is mapping else {} }}'
+          resume_track_id: '{{ media_item.get(''uri'', '''') }}'
+          resume_position: '{{ queue_payload_safe.get(''elapsed_time'', 0) | int(0)
+            }}'
+          resume_queue_id: '{{ queue_payload_safe.get(''queue_id'', '''') }}'
       - if:
         - condition: template
           value_template: "{{\n  resume_queue_id not in ['', 'unknown', 'unavailable']\n
@@ -222,17 +226,18 @@ playbee_stop_media:
         else:
         - action: system_log.write
           data:
-            level: warning
+            level: debug
             logger: playbee.nfc
-            message: 'PlayBee stop: queue lookup had no resumable current item. queue_response={{
-              queue_response }}'
+            message: 'PlayBee stop: no current item to save, skipping resume save.
+              queue_response={{ queue_response }}'
       else:
       - action: system_log.write
         data:
           level: warning
           logger: playbee.nfc
           message: 'PlayBee stop: queue lookup failed with status={{ queue_response.status
-            }}. queue_response={{ queue_response }}'
+            if queue_response is mapping else ''unknown'' }}. queue_response={{ queue_response
+            }}'
     else:
     - action: shell_command.playbee_db_clear_resume
       data:
