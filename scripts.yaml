@@ -179,11 +179,12 @@ playbee_stop_media:
       tag_uid: '{{ active_tag_uid }}'
     response_variable: db_response
   - variables:
-      tag: "{% if db_response.returncode == 0 and db_response.stdout | trim != ''
-        %}\n  {{ db_response.stdout | from_json }}\n{% else %}\n  {{ {'found': false}
-        }}\n{% endif %}"
-      should_save: '{{ tag.found | default(false) and tag.resume | default(false)
-        }}'
+      db_tag: "{% if db_response.returncode == 0 and db_response.stdout | trim !=
+        '' %}\n  {{ db_response.stdout | from_json }}\n{% else %}\n  {{ {'found':
+        false} }}\n{% endif %}"
+      db_tag_found: '{{ db_tag.found | default(false) }}'
+      db_tag_name: '{{ db_tag.name | default('''') }}'
+      should_save: '{{ db_tag_found and db_tag.resume | default(false) }}'
   - if:
     - condition: template
       value_template: '{{ should_save }}'
@@ -208,14 +209,23 @@ playbee_stop_media:
             {{ item if item is mapping else {} }}'
           media_item: '{% set item = current_item.get(''media_item'') %} {{ item if
             item is mapping else {} }}'
+          queue_extra_attributes: '{% set attrs = queue_payload_safe.get(''extra_attributes'')
+            %} {{ attrs if attrs is mapping else {} }}'
+          active_playlist_name: '{{ queue_extra_attributes.get(''active_playlist'',
+            '''') }}'
+          expected_active_playlist_name: '{{ ''PlayBee - '' ~ db_tag_name }}'
+          playlist_name_matches_active_tag: "{{\n  db_tag_name not in ['', 'unknown',
+            'unavailable']\n  and active_playlist_name not in ['', 'unknown', 'unavailable']\n
+            \ and active_playlist_name == ('PlayBee - ' ~ db_tag_name)\n}}"
           resume_track_id: '{{ media_item.get(''uri'', '''') }}'
           resume_position: '{{ queue_payload_safe.get(''elapsed_time'', 0) | int(0)
             }}'
           resume_queue_id: '{{ queue_payload_safe.get(''queue_id'', '''') }}'
       - if:
         - condition: template
-          value_template: "{{\n  resume_queue_id not in ['', 'unknown', 'unavailable']\n
-            \ and resume_track_id not in ['', 'unknown', 'unavailable']\n}}"
+          value_template: "{{\n  playlist_name_matches_active_tag\n  and resume_queue_id
+            not in ['', 'unknown', 'unavailable']\n  and resume_track_id not in ['',
+            'unknown', 'unavailable']\n}}"
         then:
         - action: shell_command.playbee_db_save_resume
           data:
@@ -228,8 +238,12 @@ playbee_stop_media:
           data:
             level: debug
             logger: playbee.nfc
-            message: 'PlayBee stop: no current item to save, skipping resume save.
-              queue_response={{ queue_response }}'
+            message: 'PlayBee stop: skipping resume save. active_tag_uid={{ active_tag_uid
+              }}, db_tag_name={{ db_tag_name }}, active_playlist_name={{ active_playlist_name
+              }}, expected_active_playlist_name={{ expected_active_playlist_name }},
+              playlist_name_matches_active_tag={{ playlist_name_matches_active_tag
+              }}, resume_queue_id={{ resume_queue_id }}, resume_track_id={{ resume_track_id
+              }}'
       else:
       - action: system_log.write
         data:
@@ -239,9 +253,12 @@ playbee_stop_media:
             if queue_response is mapping else ''unknown'' }}. queue_response={{ queue_response
             }}'
     else:
-    - action: shell_command.playbee_db_clear_resume
+    - action: system_log.write
       data:
-        tag_uid: '{{ active_tag_uid }}'
+        level: debug
+        logger: playbee.nfc
+        message: 'PlayBee stop: resume disabled or tag not found. active_tag_uid={{
+          active_tag_uid }}, db_tag={{ db_tag }}'
   - action: media_player.media_stop
     target:
       entity_id: '{{ media_player }}'
