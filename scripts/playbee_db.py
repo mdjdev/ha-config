@@ -5,10 +5,12 @@ import sys
 
 DB_PATH = "/config/playbee.db"
 
+
 def connect():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
 
 def init_db():
     conn = connect()
@@ -27,6 +29,7 @@ def init_db():
     conn.close()
     print(json.dumps({"ok": True, "action": "init"}))
 
+
 def upsert_tag(tag_uid, name, media_url, shuffle, repeat_mode, resume):
     conn = connect()
     conn.execute("""
@@ -42,6 +45,7 @@ def upsert_tag(tag_uid, name, media_url, shuffle, repeat_mode, resume):
     conn.commit()
     conn.close()
     print(json.dumps({"ok": True, "action": "upsert_tag", "tag_uid": tag_uid}))
+
 
 def save_resume(tag_uid, queue_id, track_id, position):
     resume_data = json.dumps({
@@ -59,6 +63,7 @@ def save_resume(tag_uid, queue_id, track_id, position):
     conn.close()
     print(json.dumps({"ok": True, "action": "save_resume", "tag_uid": tag_uid}))
 
+
 def clear_resume(tag_uid):
     conn = connect()
     conn.execute("""
@@ -70,18 +75,10 @@ def clear_resume(tag_uid):
     conn.close()
     print(json.dumps({"ok": True, "action": "clear_resume", "tag_uid": tag_uid}))
 
-def get_tag(tag_uid):
-    conn = connect()
-    row = conn.execute("""
-        SELECT tag_uid, name, media_url, shuffle, repeat_mode, resume, resume_data
-        FROM tags
-        WHERE tag_uid = ?
-    """, (tag_uid,)).fetchone()
-    conn.close()
 
+def row_to_tag_payload(row, fallback=None):
     if row is None:
-        print(json.dumps({"found": False, "tag_uid": tag_uid}))
-        return
+        return {"found": False, **(fallback or {})}
 
     parsed_resume_data = None
     if row["resume_data"]:
@@ -90,7 +87,7 @@ def get_tag(tag_uid):
         except Exception:
             parsed_resume_data = None
 
-    print(json.dumps({
+    return {
         "found": True,
         "tag_uid": row["tag_uid"],
         "name": row["name"],
@@ -99,7 +96,32 @@ def get_tag(tag_uid):
         "repeat_mode": row["repeat_mode"],
         "resume": bool(row["resume"]),
         "resume_data": parsed_resume_data
-    }))
+    }
+
+
+def get_tag_by_id(tag_uid):
+    conn = connect()
+    row = conn.execute("""
+        SELECT tag_uid, name, media_url, shuffle, repeat_mode, resume, resume_data
+        FROM tags
+        WHERE tag_uid = ?
+    """, (tag_uid,)).fetchone()
+    conn.close()
+
+    print(json.dumps(row_to_tag_payload(row, {"tag_uid": tag_uid})))
+
+
+def get_tag_by_name(name):
+    conn = connect()
+    row = conn.execute("""
+        SELECT tag_uid, name, media_url, shuffle, repeat_mode, resume, resume_data
+        FROM tags
+        WHERE name = ?
+    """, (name,)).fetchone()
+    conn.close()
+
+    print(json.dumps(row_to_tag_payload(row, {"name": name})))
+
 
 def main():
     if len(sys.argv) < 2:
@@ -111,17 +133,26 @@ def main():
     if action == "init":
         init_db()
     elif action == "upsert_tag" and len(sys.argv) == 8:
-        upsert_tag(sys.argv[2], sys.argv[3], sys.argv[4],
-                   sys.argv[5], sys.argv[6], sys.argv[7])
+        upsert_tag(
+            sys.argv[2],
+            sys.argv[3],
+            sys.argv[4],
+            sys.argv[5],
+            sys.argv[6],
+            sys.argv[7]
+        )
     elif action == "save_resume" and len(sys.argv) == 6:
         save_resume(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
     elif action == "clear_resume" and len(sys.argv) == 3:
         clear_resume(sys.argv[2])
-    elif action == "get_tag" and len(sys.argv) == 3:
-        get_tag(sys.argv[2])
+    elif action == "get_tag_by_id" and len(sys.argv) == 3:
+        get_tag_by_id(sys.argv[2])
+    elif action == "get_tag_by_name" and len(sys.argv) == 3:
+        get_tag_by_name(sys.argv[2])
     else:
         print(json.dumps({"ok": False, "error": "invalid arguments"}))
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

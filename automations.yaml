@@ -1098,10 +1098,7 @@
   - trigger: state
     entity_id: media_player.googlehome2758
     to: paused
-  conditions:
-  - condition: template
-    value_template: '{{ states(''input_text.playbee_active_tag_uid'') not in ['''',
-      ''unknown'', ''unavailable''] }}'
+  conditions: []
   actions:
   - action: script.playbee_save_resume
     data:
@@ -1115,9 +1112,6 @@
   - trigger: time_pattern
     seconds: /30
   conditions:
-  - condition: template
-    value_template: '{{ states(''input_text.playbee_active_tag_uid'') not in ['''',
-      ''unknown'', ''unavailable''] }}'
   - condition: state
     entity_id: media_player.googlehome2758
     state: playing
