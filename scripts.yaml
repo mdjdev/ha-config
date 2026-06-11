@@ -167,6 +167,38 @@ playbee_stop_media:
       active_tag_uid: '{{ states(''input_text.playbee_active_tag_uid'') }}'
       has_active_tag: '{{ active_tag_uid not in ['''', ''unknown'', ''unavailable'']
         }}'
+  - if:
+    - condition: template
+      value_template: '{{ not has_active_tag }}'
+    then:
+    - stop: No active tag
+  - action: script.playbee_save_resume
+    data:
+      reason: '{{ reason | default(''stop'') }}'
+  - action: media_player.media_stop
+    target:
+      entity_id: '{{ media_player }}'
+  - delay: 00:00:01
+  - action: media_player.clear_playlist
+    target:
+      entity_id: '{{ media_player }}'
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.playbee_active_tag_uid
+    data:
+      value: ''
+playbee_save_resume:
+  alias: PlayBee | Save resume
+  mode: single
+  fields:
+    reason:
+      required: false
+  sequence:
+  - variables:
+      media_player: media_player.googlehome2758
+      active_tag_uid: '{{ states(''input_text.playbee_active_tag_uid'') }}'
+      has_active_tag: '{{ active_tag_uid not in ['''', ''unknown'', ''unavailable'']
+        }}'
       queue_id: "{{\n  state_attr(media_player, 'active_queue')\n  or state_attr(media_player,
         'mass_queue_id')\n  or media_player\n}}"
   - if:
@@ -184,10 +216,9 @@ playbee_stop_media:
         false} }}\n{% endif %}"
       db_tag_found: '{{ db_tag.found | default(false) }}'
       db_tag_name: '{{ db_tag.name | default('''') }}'
-      should_save: '{{ db_tag_found }}'
   - if:
     - condition: template
-      value_template: '{{ should_save }}'
+      value_template: '{{ db_tag_found }}'
     then:
     - action: rest_command.playbee_ma_get_queue
       data:
@@ -238,37 +269,25 @@ playbee_stop_media:
           data:
             level: debug
             logger: playbee.nfc
-            message: 'PlayBee stop: skipping resume save. active_tag_uid={{ active_tag_uid
-              }}, db_tag_name={{ db_tag_name }}, active_playlist_name={{ active_playlist_name
-              }}, expected_active_playlist_name={{ expected_active_playlist_name }},
-              playlist_name_matches_active_tag={{ playlist_name_matches_active_tag
-              }}, resume_queue_id={{ resume_queue_id }}, resume_track_id={{ resume_track_id
-              }}'
+            message: 'PlayBee save_resume: skipping save. reason={{ reason | default(''unknown'')
+              }}, active_tag_uid={{ active_tag_uid }}, db_tag_name={{ db_tag_name
+              }}, active_playlist_name={{ active_playlist_name }}, expected_active_playlist_name={{
+              expected_active_playlist_name }}, playlist_name_matches_active_tag={{
+              playlist_name_matches_active_tag }}, resume_queue_id={{ resume_queue_id
+              }}, resume_track_id={{ resume_track_id }}'
       else:
       - action: system_log.write
         data:
           level: warning
           logger: playbee.nfc
-          message: 'PlayBee stop: queue lookup failed with status={{ queue_response.status
-            if queue_response is mapping else ''unknown'' }}. queue_response={{ queue_response
-            }}'
+          message: 'PlayBee save_resume: queue lookup failed with status={{ queue_response.status
+            if queue_response is mapping else ''unknown'' }}. reason={{ reason | default(''unknown'')
+            }}, queue_response={{ queue_response }}'
     else:
     - action: system_log.write
       data:
         level: debug
         logger: playbee.nfc
-        message: 'PlayBee stop: tag not found in DB. active_tag_uid={{ active_tag_uid
-          }}, db_tag={{ db_tag }}'
-  - action: media_player.media_stop
-    target:
-      entity_id: '{{ media_player }}'
-  - delay: 00:00:01
-  - action: media_player.clear_playlist
-    target:
-      entity_id: '{{ media_player }}'
-  - action: input_text.set_value
-    target:
-      entity_id: input_text.playbee_active_tag_uid
-    data:
-      value: ''
+        message: 'PlayBee save_resume: tag not found in DB. reason={{ reason | default(''unknown'')
+          }}, active_tag_uid={{ active_tag_uid }}, db_tag={{ db_tag }}'
   description: ''

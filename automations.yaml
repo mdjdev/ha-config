@@ -1091,3 +1091,39 @@
           reason: card_removed
   mode: queued
   max: 20
+- id: '1781201586519'
+  alias: PlayBee | Save resume on pause
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id: media_player.googlehome2758
+    to: paused
+  conditions:
+  - condition: template
+    value_template: '{{ states(''input_text.playbee_active_tag_uid'') not in ['''',
+      ''unknown'', ''unavailable''] }}'
+  actions:
+  - action: script.playbee_save_resume
+    data:
+      reason: paused
+  mode: queued
+  max: 10
+- id: '1781201650514'
+  alias: PlayBee | Save resume heartbeat
+  description: ''
+  triggers:
+  - trigger: time_pattern
+    seconds: /30
+  conditions:
+  - condition: template
+    value_template: '{{ states(''input_text.playbee_active_tag_uid'') not in ['''',
+      ''unknown'', ''unavailable''] }}'
+  - condition: state
+    entity_id: media_player.googlehome2758
+    state: playing
+  actions:
+  - action: script.playbee_save_resume
+    data:
+      reason: heartbeat
+  mode: queued
+  max: 10
