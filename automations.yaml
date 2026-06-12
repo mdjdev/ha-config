@@ -1172,3 +1172,50 @@
     data:
       delta: '{{ delta }}'
   mode: restart
+- id: '1781208891845'
+  alias: PlayBee | Track navigation (restart/previous)
+  description: ''
+  triggers:
+  - trigger: device
+    domain: mqtt
+    device_id: e16744d488d2d95cfa461b0b10cfd240
+    type: action
+    subtype: button_1_press_release
+  conditions: []
+  actions:
+  - wait_for_trigger:
+    - trigger: device
+      domain: mqtt
+      device_id: e16744d488d2d95cfa461b0b10cfd240
+      type: action
+      subtype: button_1_press_release
+    timeout: '00:00:01.00'
+    continue_on_timeout: true
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ wait.trigger is not none }}'
+      sequence:
+      - action: script.playbee_track_navigation
+        data:
+          action_type: previous_track
+    default:
+    - action: script.playbee_track_navigation
+      data:
+        action_type: restart_current
+  mode: single
+- id: '1781209105040'
+  alias: PlayBee | Track navigation (next)
+  description: ''
+  triggers:
+  - trigger: device
+    domain: mqtt
+    device_id: e16744d488d2d95cfa461b0b10cfd240
+    type: action
+    subtype: button_2_press_release
+  conditions: []
+  actions:
+  - action: script.playbee_track_navigation
+    data:
+      action_type: next_track
+  mode: single
