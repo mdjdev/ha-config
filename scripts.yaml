@@ -283,3 +283,26 @@ playbee_save_resume:
         message: 'PlayBee save_resume: queue lookup failed with status={{ queue_response.status
           if queue_response is mapping else ''unknown'' }}. reason={{ reason | default(''unknown'')
           }}, queue_response={{ queue_response }}'
+playbee_volume_change:
+  alias: PlayBee | Change volume
+  mode: single
+  fields:
+    delta:
+      required: true
+  sequence:
+  - variables:
+      media_player: media_player.googlehome2758
+      current_volume: '{{ state_attr(media_player, ''volume_level'') | float(0.05)
+        }}'
+      min_volume: 0.05
+      max_volume: 0.15
+      target_volume_raw: '{{ current_volume + (delta | float(0)) }}'
+      target_volume_clamped: '{{ [[target_volume_raw, min_volume] | max, max_volume]
+        | min }}'
+      new_volume: '{{ (target_volume_clamped | float) | round(2) }}'
+  - action: media_player.volume_set
+    target:
+      entity_id: '{{ media_player }}'
+    data:
+      volume_level: '{{ new_volume }}'
+  description: ''

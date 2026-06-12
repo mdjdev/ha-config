@@ -1121,3 +1121,54 @@
       reason: heartbeat
   mode: queued
   max: 10
+- id: '1781207699805'
+  alias: PlayBee | Volume control
+  description: ''
+  triggers:
+  - trigger: device
+    domain: mqtt
+    device_id: e16744d488d2d95cfa461b0b10cfd240
+    type: action
+    subtype: dial_rotate_right_fast
+    id: right_fast
+  - trigger: device
+    domain: mqtt
+    device_id: e16744d488d2d95cfa461b0b10cfd240
+    type: action
+    subtype: dial_rotate_right_slow
+    id: right_slow
+  - trigger: device
+    domain: mqtt
+    device_id: e16744d488d2d95cfa461b0b10cfd240
+    type: action
+    subtype: dial_rotate_right_step
+    id: right_step
+  - trigger: device
+    domain: mqtt
+    device_id: e16744d488d2d95cfa461b0b10cfd240
+    type: action
+    subtype: dial_rotate_left_fast
+    id: left_fast
+  - trigger: device
+    domain: mqtt
+    device_id: e16744d488d2d95cfa461b0b10cfd240
+    type: action
+    subtype: dial_rotate_left_slow
+    id: left_slow
+  - trigger: device
+    domain: mqtt
+    device_id: e16744d488d2d95cfa461b0b10cfd240
+    type: action
+    subtype: dial_rotate_left_step
+    id: left_step
+  conditions: []
+  actions:
+  - variables:
+      delta: "{% if trigger.id == 'right_fast' %}\n  0.04\n{% elif trigger.id == 'right_slow'
+        %}\n  0.02\n{% elif trigger.id == 'right_step' %}\n  0.01\n{% elif trigger.id
+        == 'left_fast' %}\n  -0.04\n{% elif trigger.id == 'left_slow' %}\n  -0.02\n{%
+        elif trigger.id == 'left_step' %}\n  -0.01\n{% else %}\n  0\n{% endif %}"
+  - action: script.playbee_volume_change
+    data:
+      delta: '{{ delta }}'
+  mode: restart
