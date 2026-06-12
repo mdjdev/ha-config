@@ -28,27 +28,71 @@ ota:
 i2c:
   scan: false
   frequency: 100kHz
+  timeout: 2ms
 
 globals:
   - id: active_uid
     type: std::string
     restore_value: no
     initial_value: '""'
+
   - id: last_announced_uid
     type: std::string
     restore_value: no
     initial_value: '""'
 
+  - id: tag_locked
+    type: bool
+    restore_value: no
+    initial_value: "false"
+
+  - id: tag_confirmed
+    type: bool
+    restore_value: no
+    initial_value: "false"
+
 script:
-  - id: clear_tag_after_delay
+  - id: confirm_scan
+    mode: restart
+    parameters:
+      uid: string
+    then:
+      - logger.log:
+          format: "Candidate tag %s detected, waiting 1000ms before confirming"
+          args: [ 'uid.c_str()' ]
+      - delay: 1000ms
+      - if:
+          condition:
+            lambda: |-
+              return id(tag_locked) &&
+                     id(active_uid) == uid &&
+                     !id(tag_confirmed);
+          then:
+            - lambda: |-
+                id(tag_confirmed) = true;
+                id(last_announced_uid) = uid;
+            - text_sensor.template.publish:
+                id: current_tag_uid
+                state: !lambda 'return uid;'
+            - binary_sensor.template.publish:
+                id: card_present
+                state: ON
+            - logger.log:
+                format: "Confirmed tag %s, sending tag_scanned"
+                args: [ 'uid.c_str()' ]
+            - homeassistant.tag_scanned: !lambda 'return uid;'
+
+  - id: confirm_removed
     mode: restart
     then:
-      - logger.log: "Starting tag removal debounce"
-      - delay: 1200ms
+      - logger.log: "Raw tag removed, waiting to confirm removal"
+      - delay: 2500ms
       - lambda: |-
+          ESP_LOGD("tagreader", "Removal confirmed, clearing active tag '%s'", id(active_uid).c_str());
           id(active_uid).clear();
           id(last_announced_uid).clear();
-      - logger.log: "Debounce elapsed, clearing tag state"
+          id(tag_locked) = false;
+          id(tag_confirmed) = false;
       - text_sensor.template.publish:
           id: current_tag_uid
           state: ""
@@ -62,28 +106,34 @@ pn532_i2c:
 
   on_tag:
     then:
-      - script.stop: clear_tag_after_delay
-      - lambda: |-
-          const bool is_new_tag = (id(active_uid) != x);
-          id(active_uid) = x;
-          ESP_LOGD("tagreader", "%s tag: %s", is_new_tag ? "New active" : "Same active", x.c_str());
-      - text_sensor.template.publish:
-          id: current_tag_uid
-          state: !lambda 'return id(active_uid);'
-      - binary_sensor.template.publish:
-          id: card_present
-          state: ON
+      - script.stop: confirm_removed
       - if:
           condition:
-            lambda: 'return id(last_announced_uid) != x;'
+            lambda: 'return !id(tag_locked);'
           then:
-            - lambda: 'id(last_announced_uid) = x;'
-            - homeassistant.tag_scanned: !lambda 'return x;'
+            - lambda: |-
+                id(active_uid) = x;
+                id(tag_locked) = true;
+                id(tag_confirmed) = false;
+                ESP_LOGD("tagreader", "Accepted candidate tag: %s", x.c_str());
+            - script.execute:
+                id: confirm_scan
+                uid: !lambda 'return x;'
+      - if:
+          condition:
+            lambda: 'return id(tag_locked) && id(active_uid) != x;'
+          then:
+            - logger.log:
+                format: "Ignoring tag %s while active tag %s is locked"
+                args: [ 'x.c_str()', 'id(active_uid).c_str()' ]
 
   on_tag_removed:
     then:
-      - logger.log: "Raw tag removed, starting debounce"
-      - script.execute: clear_tag_after_delay
+      - if:
+          condition:
+            lambda: 'return id(tag_locked);'
+          then:
+            - script.execute: confirm_removed
 
 binary_sensor:
   - platform: status
