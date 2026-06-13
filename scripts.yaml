@@ -39,8 +39,8 @@ playbee_play_media_based_on_nfc_tag:
       position: '{{ resume_data.position | int(0) if resume_data else 0 }}'
       queue_id: '{{ resume_data.queue_id if resume_data else none }}'
       do_resume: "{{\n  resume == true\n  and resume_data is not none\n  and track_id
-        not in [none, '', 'unknown', 'unavailable']\n  and position | int(0) > 0\n
-        \ and queue_id not in [none, '', 'unknown', 'unavailable']\n}}"
+        not in [none, '', 'unknown', 'unavailable']\n  and queue_id not in [none,
+        '', 'unknown', 'unavailable']\n}}"
       media_player: media_player.googlehome2758
   - if:
     - condition: template
@@ -129,11 +129,15 @@ playbee_play_media_based_on_nfc_tag:
       - wait_template: '{{ states(media_player) in [''playing'', ''buffering''] }}'
         timeout: 00:00:10
         continue_on_timeout: true
-      - action: media_player.media_seek
-        target:
-          entity_id: '{{ media_player }}'
-        data:
-          seek_position: '{{ position | int }}'
+      - if:
+        - condition: template
+          value_template: '{{ position | int > 5 }}'
+        then:
+        - action: media_player.media_seek
+          target:
+            entity_id: '{{ media_player }}'
+          data:
+            seek_position: '{{ position | int }}'
       else:
       - action: system_log.write
         data:
@@ -217,6 +221,8 @@ playbee_save_resume:
           item if item is mapping else {} }}'
         media_item: '{% set item = current_item.get(''media_item'') %} {{ item if
           item is mapping else {} }}'
+        streamdetails: '{% set item = current_item.get(''streamdetails'') %} {{ item
+          if item is mapping else {} }}'
         queue_extra_attributes: '{% set attrs = queue_payload_safe.get(''extra_attributes'')
           %} {{ attrs if attrs is mapping else {} }}'
         active_playlist_name: '{{ queue_extra_attributes.get(''active_playlist'',
@@ -225,14 +231,15 @@ playbee_save_resume:
         db_tag_name: "{% if active_playlist_name.startswith('PlayBee - ') %}\n  {{
           active_playlist_name | replace('PlayBee - ', '', 1) }}\n{% else %}\n  {{
           '' }}\n{% endif %}"
-        resume_track_id: '{{ media_item.get(''uri'', '''') }}'
+        resume_track_id: '{{ streamdetails.get(''provider'', '''') }}/{{ streamdetails.get(''item_id'',
+          '''') }}'
         resume_position: '{{ queue_payload_safe.get(''elapsed_time'', 0) | int(0)
           }}'
         resume_queue_id: '{{ queue_payload_safe.get(''queue_id'', '''') }}'
     - if:
       - condition: template
         value_template: '{{ is_playbee_playlist and db_tag_name not in ['''', ''unknown'',
-          ''unavailable''] }}'
+          ''unavailable''] and resume_track_id not in [''/''] }}'
       then:
       - action: shell_command.playbee_db_get_tag_by_name
         data:
