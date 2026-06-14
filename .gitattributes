@@ -1,0 +1,77 @@
+# Default: detect text automatically
+* text=auto
+
+# Home Assistant core config
+*.yaml text eol=lf
+*.yml  text eol=lf
+*.json text eol=lf
+
+# Docs and plain text
+*.md   text eol=lf
+*.txt  text eol=lf
+*.csv  text eol=lf
+*.log  text eol=lf
+
+# Templates / web / scripts
+*.jinja text eol=lf
+*.j2    text eol=lf
+*.html  text eol=lf
+*.css   text eol=lf
+*.js    text eol=lf
+*.ts    text eol=lf
+*.mjs   text eol=lf
+*.xml   text eol=lf
+*.svg   text eol=lf
+*.sh    text eol=lf
+*.py    text eol=lf
+
+# Home Assistant directories you may track
+automations.yaml          text eol=lf
+scripts.yaml              text eol=lf
+scenes.yaml               text eol=lf
+configuration.yaml        text eol=lf
+blueprints/**             text=auto eol=lf
+packages/**               text=auto eol=lf
+custom_templates/**       text=auto eol=lf
+custom_components/**      text=auto eol=lf
+pyscript/**               text=auto eol=lf
+themes/**                 text=auto eol=lf
+www/**                    text=auto
+
+# If you track ESPHome sources in this repo
+esphome/**                text=auto eol=lf
+
+# Never treat binary assets as text
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.avif binary
+*.ico  binary
+*.pdf  binary
+*.woff binary
+*.woff2 binary
+*.ttf  binary
+*.otf  binary
+*.eot  binary
+*.mp3  binary
+*.wav  binary
+*.ogg  binary
+*.flac binary
+*.mp4  binary
+*.mov  binary
+*.zip  binary
+*.gz   binary
+*.tgz  binary
+*.7z   binary
+*.sqlite binary
+*.db   binary
+
+# Runtime / generated files that should not be normalized even if tracked accidentally
+.storage/** -text
+.cloud/**   -text
+tts/**      -text
+deps/**     -text
+backup/**   -text
+backups/**  -text
