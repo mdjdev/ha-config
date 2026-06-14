@@ -1045,11 +1045,13 @@
   - trigger: event
     event_type: tag_scanned
     id: scanned
+    note: Trigger when an NFC tag is scanned by Home Assistant
   - trigger: state
     entity_id: binary_sensor.playbee_tagreader_card_present
     from: 'on'
     to: 'off'
     id: removed
+    note: Trigger when the reader reports that the card was removed
   conditions: []
   actions:
   - variables:
@@ -1064,31 +1066,40 @@
         defined\n      and trigger.event.data is defined\n      and trigger.event.data.device_id
         is defined %}\n  {{ trigger.event.data.device_id }}\n{% else %}\n  {{ '' }}\n{%
         endif %}"
+    note: Normalize trigger data and remember whether a PlayBee tag is already active
   - choose:
     - conditions:
       - condition: template
         value_template: '{{ trigger.id == ''scanned'' }}'
+        note: Only handle scan events in this branch
       - condition: template
         value_template: '{{ scanned_device_id == ''5027c31bfe14b567944562578ee195bd''
           }}'
+        note: Ignore scans from other readers
       - condition: template
         value_template: '{{ not has_active_tag }}'
+        note: Do not start new playback while a tag is active (same or different)
       - condition: template
         value_template: '{{ scanned_tag_uid not in ['''', ''unknown'', ''unavailable'']
           }}'
+        note: Require a usable scanned tag id
       sequence:
       - action: script.playbee_play_media_based_on_nfc_tag
         data:
           tag_uid: '{{ scanned_tag_uid }}'
+        note: Start or resume playback for the scanned tag
     - conditions:
       - condition: template
         value_template: '{{ trigger.id == ''removed'' }}'
+        note: Only handle card removal in this branch
       - condition: template
         value_template: '{{ has_active_tag }}'
+        note: Only stop when a PlayBee tag is currently active
       sequence:
       - action: script.playbee_stop_media
         data:
           reason: card_removed
+        note: Save resume state and stop playback after the card is removed
   mode: queued
   max: 20
 - id: '1781201586519'
@@ -1098,11 +1109,13 @@
   - trigger: state
     entity_id: media_player.googlehome2758
     to: paused
+    note: Trigger when the PlayBee player is paused
   conditions: []
   actions:
   - action: script.playbee_save_resume
     data:
       reason: paused
+    note: Persist current queue item and elapsed time when playback is paused
   mode: queued
   max: 10
 - id: '1781201650514'
@@ -1111,14 +1124,17 @@
   triggers:
   - trigger: time_pattern
     seconds: /30
+    note: Run every 30 seconds while something is playing
   conditions:
   - condition: state
     entity_id: media_player.googlehome2758
     state: playing
+    note: Only save heartbeat resume data during active playback
   actions:
   - action: script.playbee_save_resume
     data:
       reason: heartbeat
+    note: Periodically refresh resume data during playback
   mode: queued
   max: 10
 - id: '1781207699805'
@@ -1131,36 +1147,42 @@
     type: action
     subtype: dial_rotate_right_fast
     id: right_fast
+    note: Large volume increase
   - trigger: device
     domain: mqtt
     device_id: e16744d488d2d95cfa461b0b10cfd240
     type: action
     subtype: dial_rotate_right_slow
     id: right_slow
+    note: Medium volume increase
   - trigger: device
     domain: mqtt
     device_id: e16744d488d2d95cfa461b0b10cfd240
     type: action
     subtype: dial_rotate_right_step
     id: right_step
+    note: Small volume increase
   - trigger: device
     domain: mqtt
     device_id: e16744d488d2d95cfa461b0b10cfd240
     type: action
     subtype: dial_rotate_left_fast
     id: left_fast
+    note: Large volume decrease
   - trigger: device
     domain: mqtt
     device_id: e16744d488d2d95cfa461b0b10cfd240
     type: action
     subtype: dial_rotate_left_slow
     id: left_slow
+    note: Medium volume decrease
   - trigger: device
     domain: mqtt
     device_id: e16744d488d2d95cfa461b0b10cfd240
     type: action
     subtype: dial_rotate_left_step
     id: left_step
+    note: Small volume decrease
   conditions: []
   actions:
   - variables:
@@ -1168,9 +1190,11 @@
         %}\n  0.02\n{% elif trigger.id == 'right_step' %}\n  0.01\n{% elif trigger.id
         == 'left_fast' %}\n  -0.04\n{% elif trigger.id == 'left_slow' %}\n  -0.02\n{%
         elif trigger.id == 'left_step' %}\n  -0.01\n{% else %}\n  0\n{% endif %}"
+    note: Convert dial gesture into a signed volume delta
   - action: script.playbee_volume_change
     data:
       delta: '{{ delta }}'
+    note: Apply the calculated volume delta to the player
   mode: restart
 - id: '1781208891845'
   alias: PlayBee | Track navigation (restart/previous)
@@ -1181,6 +1205,7 @@
     device_id: e16744d488d2d95cfa461b0b10cfd240
     type: action
     subtype: button_1_press_release
+    note: Single press may mean restart current or previous track (depending if second press follows within timeout)
   conditions: []
   actions:
   - wait_for_trigger:
@@ -1189,20 +1214,25 @@
       device_id: e16744d488d2d95cfa461b0b10cfd240
       type: action
       subtype: button_1_press_release
+      note: Second press within timeout means previous track
     timeout: '00:00:01.00'
     continue_on_timeout: true
+    note: Distinguish single press from double press
   - choose:
     - conditions:
       - condition: template
         value_template: '{{ wait.trigger is not none }}'
+        note: Double press detected
       sequence:
       - action: script.playbee_track_navigation
         data:
           action_type: previous_track
+        note: Jump to previous track on double press
     default:
     - action: script.playbee_track_navigation
       data:
         action_type: restart_current
+      note: Restart current track on single press
   mode: single
 - id: '1781209105040'
   alias: PlayBee | Track navigation (next)
@@ -1213,9 +1243,11 @@
     device_id: e16744d488d2d95cfa461b0b10cfd240
     type: action
     subtype: button_2_press_release
+    note: Advance to the next track
   conditions: []
   actions:
   - action: script.playbee_track_navigation
     data:
       action_type: next_track
+    note: Send next track command to the shared navigation script
   mode: single

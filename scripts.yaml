@@ -19,11 +19,13 @@ playbee_play_media_based_on_nfc_tag:
     tag_uid:
       description: The scanned NFC tag UID
       required: true
+      note: UID read from the NFC scan event
   sequence:
   - action: shell_command.playbee_db_get_tag_by_id
     data:
       tag_uid: '{{ tag_uid }}'
     response_variable: db_response
+    note: Look up the scanned tag in the PlayBee database
   - variables:
       tag: "{% if db_response.returncode == 0 and db_response.stdout | trim != ''
         %}\n  {{ db_response.stdout | from_json }}\n{% else %}\n  {{ {'found': false}
@@ -42,45 +44,55 @@ playbee_play_media_based_on_nfc_tag:
         not in [none, '', 'unknown', 'unavailable']\n  and queue_id not in [none,
         '', 'unknown', 'unavailable']\n}}"
       media_player: media_player.googlehome2758
+    note: Extract tag settings and decide whether a resume attempt is possible
   - if:
     - condition: template
       value_template: '{{ not found or not media_url }}'
+      note: Stop early if the tag is unknown or has no media URL
     then:
     - action: system_log.write
       data:
         level: warning
         logger: playbee.nfc
         message: Unknown or incomplete NFC tag in DB. tag_uid={{ tag_uid }}
+      note: Log invalid tag data for later troubleshooting
     - stop: Unknown NFC tag
   - action: input_text.set_value
     target:
       entity_id: input_text.playbee_active_tag_uid
     data:
       value: '{{ tag_uid }}'
+    note: Mark this tag as the currently active PlayBee tag
   - action: media_player.clear_playlist
     target:
       entity_id: '{{ media_player }}'
+    note: Reset the player queue before new playback or resume
   - action: media_player.shuffle_set
     target:
       entity_id: '{{ media_player }}'
     data:
       shuffle: '{{ shuffle }}'
+    note: Apply per tag shuffle setting before playback starts
   - action: media_player.repeat_set
     target:
       entity_id: '{{ media_player }}'
     data:
       repeat: '{{ repeat_mode }}'
+    note: Apply per tag repeat mode before playback starts
   - if:
     - condition: template
       value_template: '{{ do_resume }}'
+      note: Resume only when stored queue and track data are present
     then:
     - action: rest_command.playbee_ma_resolve_item_by_uri
       data:
         uri: '{{ media_url }}'
       response_variable: resolved_item_response
+      note: Resolve external provider URI to the MA internal library playlist URI
     - if:
       - condition: template
         value_template: '{{ resolved_item_response.status == 200 }}'
+        note: Continue only when the MA resolve call succeeded
       then:
       - variables:
           resolved_item: "{% set content = resolved_item_response.content if resolved_item_response
@@ -90,11 +102,13 @@ playbee_play_media_based_on_nfc_tag:
           resolved_media_url: '{{ resolved_item.get(''uri'', '''') }}'
           resolved_media_provider: '{{ resolved_item.get(''provider'', '''') }}'
           resolved_media_type: '{{ resolved_item.get(''media_type'', '''') }}'
+        note: Parse the resolved MA item and keep only the fields needed for resume
       - if:
         - condition: template
           value_template: "{{\n  resolved_media_url in ['', 'unknown', 'unavailable']\n
             \ or resolved_media_provider != 'library'\n  or resolved_media_type !=
             'playlist'\n}}"
+          note: Resume requires a valid MA library playlist URI
         then:
         - action: system_log.write
           data:
@@ -102,6 +116,7 @@ playbee_play_media_based_on_nfc_tag:
             logger: playbee.nfc
             message: Could not resolve internal library playlist URI. media_url={{
               media_url }}, resolved_item={{ resolved_item }}
+          note: Log unexpected resolve results before aborting resume
         - stop: Invalid resolved playlist URI
       - action: system_log.write
         data:
@@ -110,45 +125,54 @@ playbee_play_media_based_on_nfc_tag:
           message: 'PlayBee resuming: tag={{ tag_uid }}, external_media={{ media_url
             }}, resolved_media={{ resolved_media_url }}, track={{ track_id }}, position={{
             position }}'
+        note: Record the normalized resume input sent to Music Assistant
       - action: rest_command.playbee_ma_resume
         data:
           queue_id: '{{ queue_id }}'
           track_id: '{{ track_id }}'
           media_url: '{{ resolved_media_url }}'
         response_variable: resume_response
+        note: Ask Music Assistant to resume the resolved playlist and target track
       - if:
         - condition: template
           value_template: '{{ resume_response.status != 200 }}'
+          note: Abort if the MA resume call failed
         then:
         - action: system_log.write
           data:
             level: error
             logger: playbee.nfc
             message: 'PlayBee resume failed: {{ resume_response }}'
+          note: Preserve the full MA resume response in the log
         - stop: Resume failed
       - wait_template: '{{ states(media_player) in [''playing'', ''buffering''] }}'
         timeout: 00:00:10
         continue_on_timeout: true
+        note: Give the player time to enter a playable state before seeking
       - if:
         - condition: template
           value_template: '{{ position | int > 5 }}'
+          note: Skip seek when the saved position is too close to the start
         then:
         - action: media_player.media_seek
           target:
             entity_id: '{{ media_player }}'
           data:
             seek_position: '{{ position | int }}'
+          note: Seek to the saved elapsed position after resume starts
       else:
       - action: system_log.write
         data:
           level: error
           logger: playbee.nfc
           message: 'URI resolve failed: {{ resolved_item_response }}'
+        note: Log failed playlist resolution responses from Music Assistant
       - stop: URI resolve failed
     else:
     - action: shell_command.playbee_db_clear_resume
       data:
         tag_uid: '{{ tag_uid }}'
+      note: Clear stale resume data before starting fresh playback
     - action: media_player.play_media
       target:
         entity_id: '{{ media_player }}'
@@ -158,6 +182,7 @@ playbee_play_media_based_on_nfc_tag:
           media_content_id: '{{ media_url }}'
           media_content_type: music
           metadata: {}
+      note: Start normal playback from the tag media URL without resume
   description: ''
 playbee_stop_media:
   alias: PlayBee | Stop media
@@ -165,50 +190,62 @@ playbee_stop_media:
   fields:
     reason:
       required: false
+      note: Optional context describing why playback was stopped
   sequence:
   - variables:
       media_player: media_player.googlehome2758
       active_tag_uid: '{{ states(''input_text.playbee_active_tag_uid'') }}'
       has_active_tag: '{{ active_tag_uid not in ['''', ''unknown'', ''unavailable'']
         }}'
+    note: Gather current player and active tag state before stopping
   - action: script.playbee_save_resume
     data:
       reason: '{{ reason | default(''stop'') }}'
+    note: Save queue position before stopping playback
   - action: media_player.media_stop
     target:
       entity_id: '{{ media_player }}'
+    note: Stop playback on the PlayBee target player
   - delay: 00:00:01
+    note: Short delay so the stop command settles before clearing the queue
   - action: media_player.clear_playlist
     target:
       entity_id: '{{ media_player }}'
+    note: Remove remaining queue items after stopping
   - if:
     - condition: template
       value_template: '{{ has_active_tag }}'
+      note: Only clear the helper when a tag is currently marked as active
     then:
     - action: input_text.set_value
       target:
         entity_id: input_text.playbee_active_tag_uid
       data:
         value: ''
+      note: Reset the active tag helper after playback ends
 playbee_save_resume:
   alias: PlayBee | Save resume
   mode: single
   fields:
     reason:
       required: false
+      note: Optional reason such as "paused", "heartbeat" or "stop"
   sequence:
   - variables:
       media_player: media_player.googlehome2758
       queue_id: "{{\n  state_attr(media_player, 'active_queue')\n  or state_attr(media_player,
         'mass_queue_id')\n  or media_player\n}}"
+    note: Determine the active Music Assistant queue id for the target player
   - action: rest_command.playbee_ma_get_queue
     data:
       queue_id: '{{ queue_id }}'
     response_variable: queue_response
+    note: Fetch queue state from Music Assistant to inspect current playback
   - if:
     - condition: template
       value_template: '{{ queue_response is mapping and queue_response.status == 200
         }}'
+      note: Continue only when queue inspection succeeded
     then:
     - variables:
         queue_payload: "{% set content = queue_response.content if queue_response
@@ -236,15 +273,18 @@ playbee_save_resume:
         resume_position: '{{ queue_payload_safe.get(''elapsed_time'', 0) | int(0)
           }}'
         resume_queue_id: '{{ queue_payload_safe.get(''queue_id'', '''') }}'
+      note: Extract playlist identity current track and elapsed position from queue data
     - if:
       - condition: template
         value_template: '{{ is_playbee_playlist and db_tag_name not in ['''', ''unknown'',
           ''unavailable''] and resume_track_id not in [''/''] }}'
+        note: Save resume only for PlayBee managed playlists with a usable track id
       then:
       - action: shell_command.playbee_db_get_tag_by_name
         data:
           tag_name: '{{ db_tag_name }}'
         response_variable: db_response
+        note: Resolve the active PlayBee playlist name back to its NFC tag entry
       - variables:
           db_tag: "{% if db_response.returncode == 0 and db_response.stdout | trim
             != '' %}\n  {{ db_response.stdout | from_json }}\n{% else %}\n  {{ {'found':
@@ -252,11 +292,13 @@ playbee_save_resume:
           db_tag_found: '{{ db_tag.found | default(false) }}'
           db_tag_uid: '{{ db_tag.tag_uid | default('''') }}'
           db_tag_name_from_db: '{{ db_tag.name | default('''') }}'
+        note: Parse the database lookup result for the active playlist name
       - if:
         - condition: template
           value_template: "{{\n  db_tag_found\n  and db_tag_uid not in ['', 'unknown',
             'unavailable']\n  and resume_queue_id not in ['', 'unknown', 'unavailable']\n
             \ and resume_track_id not in ['', 'unknown', 'unavailable']\n}}"
+          note: Only write resume data when tag queue and track identifiers are valid
         then:
         - action: shell_command.playbee_db_save_resume
           data:
@@ -264,6 +306,7 @@ playbee_save_resume:
             track_id: '{{ resume_track_id }}'
             position: '{{ resume_position }}'
             queue_id: '{{ resume_queue_id }}'
+          note: Persist resume data for later playback continuation
         else:
         - action: system_log.write
           data:
@@ -274,6 +317,7 @@ playbee_save_resume:
               }}, db_tag_name={{ db_tag_name }}, db_tag_found={{ db_tag_found }},
               db_tag_uid={{ db_tag_uid }}, resume_queue_id={{ resume_queue_id }},
               resume_track_id={{ resume_track_id }}'
+          note: Log why resume data was not written after tag lookup
       else:
       - action: system_log.write
         data:
@@ -282,6 +326,7 @@ playbee_save_resume:
           message: 'PlayBee save_resume: current queue is not a PlayBee playlist.
             reason={{ reason | default(''unknown'') }}, active_playlist_name={{ active_playlist_name
             }}'
+        note: Ignore playback that was not started by a PlayBee playlist
     else:
     - action: system_log.write
       data:
@@ -290,12 +335,14 @@ playbee_save_resume:
         message: 'PlayBee save_resume: queue lookup failed with status={{ queue_response.status
           if queue_response is mapping else ''unknown'' }}. reason={{ reason | default(''unknown'')
           }}, queue_response={{ queue_response }}'
+      note: Log failed queue lookups because resume data cannot be updated
 playbee_volume_change:
   alias: PlayBee | Change volume
   mode: single
   fields:
     delta:
       required: true
+      note: Signed volume delta from the rotary controller
   sequence:
   - variables:
       media_player: media_player.googlehome2758
@@ -307,11 +354,13 @@ playbee_volume_change:
       target_volume_clamped: '{{ [[target_volume_raw, min_volume] | max, max_volume]
         | min }}'
       new_volume: '{{ (target_volume_clamped | float) | round(2) }}'
+    note: Clamp the requested volume into the safe PlayBee range
   - action: media_player.volume_set
     target:
       entity_id: '{{ media_player }}'
     data:
       volume_level: '{{ new_volume }}'
+    note: Apply the new bounded volume to the player
   description: ''
 playbee_track_navigation:
   alias: PlayBee | Track navigation
@@ -327,29 +376,36 @@ playbee_track_navigation:
           - restart_current
           - previous_track
           - next_track
+      note: Navigation command selected by the button automations
   sequence:
   - choose:
     - conditions:
       - condition: template
         value_template: '{{ action_type == ''restart_current'' }}'
+        note: Restart the current track from the beginning
       sequence:
       - action: media_player.media_seek
         target:
           entity_id: media_player.googlehome2758
         data:
           seek_position: 0
+        note: Seek to zero instead of changing queue position
     - conditions:
       - condition: template
         value_template: '{{ action_type == ''previous_track'' }}'
+        note: Move to the previous queue item
       sequence:
       - action: media_player.media_previous_track
         target:
           entity_id: media_player.googlehome2758
+        note: Ask the player to go to the previous track
     - conditions:
       - condition: template
         value_template: '{{ action_type == ''next_track'' }}'
+        note: Move to the next queue item
       sequence:
       - action: media_player.media_next_track
         target:
           entity_id: media_player.googlehome2758
+        note: Ask the player to go to the next track
   description: ''
