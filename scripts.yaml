@@ -231,7 +231,7 @@ playbee_save_resume:
         db_tag_name: "{% if active_playlist_name.startswith('PlayBee - ') %}\n  {{
           active_playlist_name | replace('PlayBee - ', '', 1) }}\n{% else %}\n  {{
           '' }}\n{% endif %}"
-        resume_track_id: '{{ streamdetails.get(''provider'', '''') }}/{{ streamdetails.get(''item_id'',
+        resume_track_id: '{{ streamdetails.get(''provider'', '''') }}://track/{{ streamdetails.get(''item_id'',
           '''') }}'
         resume_position: '{{ queue_payload_safe.get(''elapsed_time'', 0) | int(0)
           }}'
