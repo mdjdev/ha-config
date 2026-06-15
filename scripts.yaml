@@ -19,7 +19,6 @@ playbee_play_media_based_on_nfc_tag:
     tag_uid:
       description: The scanned NFC tag UID
       required: true
-      note: UID read from the NFC scan event
   sequence:
   - action: shell_command.playbee_db_get_tag_by_id
     data:
@@ -190,7 +189,6 @@ playbee_stop_media:
   fields:
     reason:
       required: false
-      note: Optional context describing why playback was stopped
   sequence:
   - variables:
       media_player: media_player.googlehome2758
@@ -229,7 +227,6 @@ playbee_save_resume:
   fields:
     reason:
       required: false
-      note: Optional reason such as "paused", "heartbeat" or "stop"
   sequence:
   - variables:
       media_player: media_player.googlehome2758
@@ -342,7 +339,6 @@ playbee_volume_change:
   fields:
     delta:
       required: true
-      note: Signed volume delta from the rotary controller
   sequence:
   - variables:
       media_player: media_player.googlehome2758
@@ -376,7 +372,6 @@ playbee_track_navigation:
           - restart_current
           - previous_track
           - next_track
-      note: Navigation command selected by the button automations
   sequence:
   - choose:
     - conditions:
