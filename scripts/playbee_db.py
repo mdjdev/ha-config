@@ -2,6 +2,7 @@
 import json
 import sqlite3
 import sys
+from datetime import datetime, timezone
 
 DB_PATH = "/config/playbee.db"
 
@@ -49,6 +50,7 @@ def upsert_tag(tag_uid, name, media_url, shuffle, repeat_mode, resume):
 
 def save_resume(tag_uid, queue_id, track_id, position):
     resume_data = json.dumps({
+        "last_updated": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "track_id": track_id,
         "position": int(float(position)),
         "queue_id": queue_id
