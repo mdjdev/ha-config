@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import re
 import sqlite3
 import sys
 from datetime import datetime, timezone
@@ -13,6 +14,59 @@ def connect():
     return conn
 
 
+def normalize_shuffle_mode(value):
+    if isinstance(value, bool):
+        return "on" if value else "off"
+    value = str(value or "").strip().lower()
+    return "on" if value in {"1", "true", "on", "yes"} else "off"
+
+
+def normalize_repeat_mode(value):
+    if isinstance(value, bool):
+        return "all" if value else "off"
+
+    value = str(value or "").strip().lower()
+
+    mapping = {
+        "": "off",
+        "0": "off",
+        "false": "off",
+        "off": "off",
+        "none": "off",
+        "no": "off",
+
+        "1": "one",
+        "one": "one",
+        "track": "one",
+        "single": "one",
+
+        "2": "all",
+        "true": "all",
+        "on": "all",
+        "yes": "all",
+        "all": "all",
+        "playlist": "all",
+        "queue": "all",
+    }
+
+    return mapping.get(value, "off")
+
+
+def normalize_resume_mode(value):
+    value = str(value or "").strip().lower()
+
+    if value in {"", "0", "false", "off", "none", "no"}:
+        return "off"
+
+    if re.fullmatch(r"\d+[hd]", value):
+        return value
+
+    if value.isdigit():
+        return f"{value}h"
+
+    return "off"
+
+
 def init_db():
     conn = connect()
     conn.execute("""
@@ -20,9 +74,9 @@ def init_db():
             tag_uid TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             media_url TEXT NOT NULL,
-            shuffle INTEGER NOT NULL DEFAULT 0,
+            shuffle_mode TEXT NOT NULL DEFAULT 'off',
             repeat_mode TEXT NOT NULL DEFAULT 'off',
-            resume INTEGER NOT NULL DEFAULT 0,
+            resume_mode TEXT NOT NULL DEFAULT 'off',
             resume_data TEXT DEFAULT NULL
         )
     """)
@@ -31,18 +85,25 @@ def init_db():
     print(json.dumps({"ok": True, "action": "init"}))
 
 
-def upsert_tag(tag_uid, name, media_url, shuffle, repeat_mode, resume):
+def upsert_tag(tag_uid, name, media_url, shuffle_mode, repeat_mode, resume_mode):
     conn = connect()
     conn.execute("""
-        INSERT INTO tags (tag_uid, name, media_url, shuffle, repeat_mode, resume)
+        INSERT INTO tags (tag_uid, name, media_url, shuffle_mode, repeat_mode, resume_mode)
         VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(tag_uid) DO UPDATE SET
             name=excluded.name,
             media_url=excluded.media_url,
-            shuffle=excluded.shuffle,
+            shuffle_mode=excluded.shuffle_mode,
             repeat_mode=excluded.repeat_mode,
-            resume=excluded.resume
-    """, (tag_uid, name, media_url, int(shuffle), repeat_mode, int(resume)))
+            resume_mode=excluded.resume_mode
+    """, (
+        tag_uid,
+        name,
+        media_url,
+        normalize_shuffle_mode(shuffle_mode),
+        normalize_repeat_mode(repeat_mode),
+        normalize_resume_mode(resume_mode)
+    ))
     conn.commit()
     conn.close()
     print(json.dumps({"ok": True, "action": "upsert_tag", "tag_uid": tag_uid}))
@@ -94,9 +155,9 @@ def row_to_tag_payload(row, fallback=None):
         "tag_uid": row["tag_uid"],
         "name": row["name"],
         "media_url": row["media_url"],
-        "shuffle": bool(row["shuffle"]),
-        "repeat_mode": row["repeat_mode"],
-        "resume": bool(row["resume"]),
+        "shuffle_mode": normalize_shuffle_mode(row["shuffle_mode"]),
+        "repeat_mode": normalize_repeat_mode(row["repeat_mode"]),
+        "resume_mode": normalize_resume_mode(row["resume_mode"]),
         "resume_data": parsed_resume_data
     }
 
@@ -104,7 +165,7 @@ def row_to_tag_payload(row, fallback=None):
 def get_tag_by_id(tag_uid):
     conn = connect()
     row = conn.execute("""
-        SELECT tag_uid, name, media_url, shuffle, repeat_mode, resume, resume_data
+        SELECT tag_uid, name, media_url, shuffle_mode, repeat_mode, resume_mode, resume_data
         FROM tags
         WHERE tag_uid = ?
     """, (tag_uid,)).fetchone()
@@ -116,7 +177,7 @@ def get_tag_by_id(tag_uid):
 def get_tag_by_name(name):
     conn = connect()
     row = conn.execute("""
-        SELECT tag_uid, name, media_url, shuffle, repeat_mode, resume, resume_data
+        SELECT tag_uid, name, media_url, shuffle_mode, repeat_mode, resume_mode, resume_data
         FROM tags
         WHERE name = ?
     """, (name,)).fetchone()

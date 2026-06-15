@@ -32,28 +32,59 @@ playbee_play_media_based_on_nfc_tag:
       found: '{{ tag.found | default(false) }}'
       media_url: '{{ tag.media_url | default('''') }}'
       name: '{{ tag.name | default('''') }}'
-      shuffle: '{{ tag.shuffle | default(false) }}'
-      repeat_mode: '{{ tag.repeat_mode | default(''off'') }}'
-      resume: '{{ tag.resume | default(false) }}'
+      shuffle_mode: '{% set value = tag.shuffle_mode | default(''off'') | string |
+        lower | trim %} {{ ''on'' if value in [''on'', ''true'', ''1'', ''yes''] else
+        ''off'' }}'
+      repeat_mode: "{% set value = tag.repeat_mode | default('off') | string | lower
+        | trim %} {% if value in ['one', 'track', 'single', '1'] %}\n  one\n{% elif
+        value in ['all', 'playlist', 'queue', 'on', 'true', '2', 'yes'] %}\n  all\n{%
+        else %}\n  off\n{% endif %}"
+      resume_mode: "{% set value = tag.resume_mode | default('off') | string | lower
+        | trim %} {% if value in ['off', '', 'unknown', 'unavailable', 'none', 'false',
+        '0', 'no'] %}\n  off\n{% elif value.endswith('d') and (value[:-1] | int(-1))
+        >= 0 %}\n  {{ (value[:-1] | int(0)) ~ 'd' }}\n{% elif value.endswith('h')
+        and (value[:-1] | int(-1)) >= 0 %}\n  {{ (value[:-1] | int(0)) ~ 'h' }}\n{%
+        elif value | int(-1) >= 0 %}\n  {{ (value | int(0)) ~ 'h' }}\n{% else %}\n
+        \ off\n{% endif %}"
       resume_data: '{{ tag.resume_data | default(none) }}'
-      track_id: '{{ resume_data.track_id if resume_data else none }}'
-      position: '{{ resume_data.position | int(0) if resume_data else 0 }}'
-      queue_id: '{{ resume_data.queue_id if resume_data else none }}'
-      do_resume: "{{\n  resume == true\n  and resume_data is not none\n  and track_id
-        not in [none, '', 'unknown', 'unavailable']\n  and queue_id not in [none,
-        '', 'unknown', 'unavailable']\n}}"
+      track_id: '{{ resume_data.track_id if resume_data is mapping else none }}'
+      position: '{{ resume_data.position | int(0) if resume_data is mapping else 0
+        }}'
+      queue_id: '{{ resume_data.queue_id if resume_data is mapping else none }}'
+      resume_last_updated: '{{ resume_data.last_updated if resume_data is mapping
+        else none }}'
+      resume_ttl_seconds: "{% set mode = resume_mode | string | lower | trim %} {%
+        if mode == 'off' %}\n  0\n{% elif mode.endswith('d') and (mode[:-1] | int(-1))
+        >= 0 %}\n  {{ (mode[:-1] | int(0)) * 86400 }}\n{% elif mode.endswith('h')
+        and (mode[:-1] | int(-1)) >= 0 %}\n  {{ (mode[:-1] | int(0)) * 3600 }}\n{%
+        else %}\n  0\n{% endif %}"
+      resume_last_updated_ts: "{% if resume_last_updated not in [none, '', 'unknown',
+        'unavailable'] %}\n  {{ as_timestamp(resume_last_updated, 0) | int(0) }}\n{%
+        else %}\n  0\n{% endif %}"
+      resume_age_seconds: "{% if resume_last_updated_ts | int(0) > 0 %}\n  {{ (as_timestamp(now())
+        - (resume_last_updated_ts | int(0))) | int(0) }}\n{% else %}\n  -1\n{% endif
+        %}"
+      resume_has_data: "{{\n  resume_data is mapping\n  and track_id not in [none,
+        '', 'unknown', 'unavailable']\n  and queue_id not in [none, '', 'unknown',
+        'unavailable']\n}}"
+      resume_is_fresh: "{{\n  resume_ttl_seconds | int(0) > 0\n  and resume_age_seconds
+        | int(-1) >= 0\n  and resume_age_seconds | int(0) <= resume_ttl_seconds |
+        int(0)\n}}"
+      do_resume: '{{ resume_has_data and resume_is_fresh }}'
       media_player: media_player.googlehome2758
     note: Extract tag settings and decide whether a resume attempt is possible
   - if:
     - condition: template
-      value_template: '{{ not found or not media_url }}'
-      note: Stop early if the tag is unknown or has no media URL
+      value_template: '{{ not found or media_url in ['''', ''unknown'', ''unavailable'']
+        }}'
+      note: Stop early if the tag is unknown or has no usable media URL
     then:
     - action: system_log.write
       data:
         level: warning
         logger: playbee.nfc
-        message: Unknown or incomplete NFC tag in DB. tag_uid={{ tag_uid }}
+        message: Unknown or incomplete NFC tag in DB. tag_uid={{ tag_uid }}, found={{
+          found }}, media_url={{ media_url }}
       note: Log invalid tag data for later troubleshooting
     - stop: Unknown NFC tag
   - action: input_text.set_value
@@ -70,7 +101,7 @@ playbee_play_media_based_on_nfc_tag:
     target:
       entity_id: '{{ media_player }}'
     data:
-      shuffle: '{{ shuffle }}'
+      shuffle: '{{ shuffle_mode == ''on'' }}'
     note: Apply per tag shuffle setting before playback starts
   - action: media_player.repeat_set
     target:
@@ -81,7 +112,8 @@ playbee_play_media_based_on_nfc_tag:
   - if:
     - condition: template
       value_template: '{{ do_resume }}'
-      note: Resume only when stored queue and track data are present
+      note: Resume only when stored queue and track data are present and TTL is still
+        valid
     then:
     - action: rest_command.playbee_ma_resolve_item_by_uri
       data:
@@ -90,7 +122,8 @@ playbee_play_media_based_on_nfc_tag:
       note: Resolve external provider URI to the MA internal library playlist URI
     - if:
       - condition: template
-        value_template: '{{ resolved_item_response.status == 200 }}'
+        value_template: '{{ resolved_item_response is mapping and resolved_item_response.status
+          == 200 }}'
         note: Continue only when the MA resolve call succeeded
       then:
       - variables:
@@ -113,17 +146,20 @@ playbee_play_media_based_on_nfc_tag:
           data:
             level: warning
             logger: playbee.nfc
-            message: Could not resolve internal library playlist URI. media_url={{
-              media_url }}, resolved_item={{ resolved_item }}
+            message: Could not resolve internal library playlist URI. tag_uid={{ tag_uid
+              }}, media_url={{ media_url }}, resolved_item={{ resolved_item }}
           note: Log unexpected resolve results before aborting resume
         - stop: Invalid resolved playlist URI
       - action: system_log.write
         data:
           level: info
           logger: playbee.nfc
-          message: 'PlayBee resuming: tag={{ tag_uid }}, external_media={{ media_url
-            }}, resolved_media={{ resolved_media_url }}, track={{ track_id }}, position={{
-            position }}'
+          message: 'PlayBee resuming: tag={{ tag_uid }}, media={{ media_url }}, resolved_media={{
+            resolved_media_url }}, queue_id={{ queue_id }}, track={{ track_id }},
+            position={{ position }}, shuffle_mode={{ shuffle_mode }}, repeat_mode={{
+            repeat_mode }}, resume_mode={{ resume_mode }}, resume_last_updated={{
+            resume_last_updated }}, resume_age_seconds={{ resume_age_seconds }}, resume_ttl_seconds={{
+            resume_ttl_seconds }}'
         note: Record the normalized resume input sent to Music Assistant
       - action: rest_command.playbee_ma_resume
         data:
@@ -134,7 +170,8 @@ playbee_play_media_based_on_nfc_tag:
         note: Ask Music Assistant to resume the resolved playlist and target track
       - if:
         - condition: template
-          value_template: '{{ resume_response.status != 200 }}'
+          value_template: '{{ resume_response is not mapping or resume_response.status
+            != 200 }}'
           note: Abort if the MA resume call failed
         then:
         - action: system_log.write
@@ -168,10 +205,15 @@ playbee_play_media_based_on_nfc_tag:
         note: Log failed playlist resolution responses from Music Assistant
       - stop: URI resolve failed
     else:
-    - action: shell_command.playbee_db_clear_resume
+    - action: system_log.write
       data:
-        tag_uid: '{{ tag_uid }}'
-      note: Clear stale resume data before starting fresh playback
+        level: info
+        logger: playbee.nfc
+        message: 'PlayBee fresh playback: tag={{ tag_uid }}, media={{ media_url }},
+          shuffle_mode={{ shuffle_mode }}, repeat_mode={{ repeat_mode }}, resume_mode={{
+          resume_mode }}, resume_has_data={{ resume_has_data }}, resume_is_fresh={{
+          resume_is_fresh }}'
+      note: Record why playback starts fresh instead of resuming
     - action: media_player.play_media
       target:
         entity_id: '{{ media_player }}'
@@ -270,7 +312,8 @@ playbee_save_resume:
         resume_position: '{{ queue_payload_safe.get(''elapsed_time'', 0) | int(0)
           }}'
         resume_queue_id: '{{ queue_payload_safe.get(''queue_id'', '''') }}'
-      note: Extract playlist identity current track and elapsed position from queue data
+      note: Extract playlist identity current track and elapsed position from queue
+        data
     - if:
       - condition: template
         value_template: '{{ is_playbee_playlist and db_tag_name not in ['''', ''unknown'',
