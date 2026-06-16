@@ -272,6 +272,9 @@ playbee_save_resume:
   sequence:
   - variables:
       media_player: media_player.googlehome2758
+      active_tag_uid: '{{ states(''input_text.playbee_active_tag_uid'') }}'
+      dev_tag_uids:
+      - 04-3D-AA-EA-40-59-80
       queue_id: "{{\n  state_attr(media_player, 'active_queue')\n  or state_attr(media_player,
         'mass_queue_id')\n  or media_player\n}}"
     note: Determine the active Music Assistant queue id for the target player
@@ -287,6 +290,7 @@ playbee_save_resume:
       note: Continue only when queue inspection succeeded
     then:
     - variables:
+        is_dev_card: '{{ active_tag_uid in dev_tag_uids }}'
         queue_payload: "{% set content = queue_response.content if queue_response
           is mapping else none %} {% if content is mapping %}\n  {{ content }}\n{%
           elif content is string %}\n  {{ content | from_json({}, default={}) }}\n{%
@@ -304,27 +308,28 @@ playbee_save_resume:
         active_playlist_name: '{{ queue_extra_attributes.get(''active_playlist'',
           '''') }}'
         is_playbee_playlist: '{{ active_playlist_name.startswith(''PlayBee - '') }}'
-        db_tag_name: "{% if active_playlist_name.startswith('PlayBee - ') %}\n  {{
-          active_playlist_name | replace('PlayBee - ', '', 1) }}\n{% else %}\n  {{
-          '' }}\n{% endif %}"
+        db_tag_name: "{% set playlist = active_playlist_name %} {% if is_dev_card
+          and playlist.startswith('PlayBee - ') %}\n  {{ playlist | replace('PlayBee
+          - ', 'Dev - ', 1) }}\n{% else %}\n  {{ playlist }}\n{% endif %}"
         resume_track_id: '{{ streamdetails.get(''provider'', '''') }}://track/{{ streamdetails.get(''item_id'',
           '''') }}'
         resume_position: '{{ queue_payload_safe.get(''elapsed_time'', 0) | int(0)
           }}'
         resume_queue_id: '{{ queue_payload_safe.get(''queue_id'', '''') }}'
-      note: Extract playlist identity current track and elapsed position from queue
+      note: Extract playlist identity, current track, and elapsed position from queue
         data
     - if:
       - condition: template
-        value_template: '{{ is_playbee_playlist and db_tag_name not in ['''', ''unknown'',
-          ''unavailable''] and resume_track_id not in [''/''] }}'
-        note: Save resume only for PlayBee managed playlists with a usable track id
+        value_template: "{{\n  is_playbee_playlist\n  and db_tag_name not in ['',
+          'unknown', 'unavailable']\n  and resume_track_id not in ['', '/', 'unknown',
+          'unavailable']\n}}"
+        note: Save resume only for PlayBee-managed playlists with a usable track id
       then:
       - action: shell_command.playbee_db_get_tag_by_name
         data:
           tag_name: '{{ db_tag_name }}'
         response_variable: db_response
-        note: Resolve the active PlayBee playlist name back to its NFC tag entry
+        note: Resolve the effective playlist name back to its NFC tag entry
       - variables:
           db_tag: "{% if db_response.returncode == 0 and db_response.stdout | trim
             != '' %}\n  {{ db_response.stdout | from_json }}\n{% else %}\n  {{ {'found':
@@ -338,7 +343,8 @@ playbee_save_resume:
           value_template: "{{\n  db_tag_found\n  and db_tag_uid not in ['', 'unknown',
             'unavailable']\n  and resume_queue_id not in ['', 'unknown', 'unavailable']\n
             \ and resume_track_id not in ['', 'unknown', 'unavailable']\n}}"
-          note: Only write resume data when tag queue and track identifiers are valid
+          note: Only write resume data when tag, queue, and track identifiers are
+            valid
         then:
         - action: shell_command.playbee_db_save_resume
           data:
@@ -353,19 +359,22 @@ playbee_save_resume:
             level: debug
             logger: playbee.nfc
             message: 'PlayBee save_resume: skipping save after DB lookup. reason={{
-              reason | default(''unknown'') }}, active_playlist_name={{ active_playlist_name
+              reason | default(''unknown'') }}, active_tag_uid={{ active_tag_uid }},
+              is_dev_card={{ is_dev_card }}, active_playlist_name={{ active_playlist_name
               }}, db_tag_name={{ db_tag_name }}, db_tag_found={{ db_tag_found }},
-              db_tag_uid={{ db_tag_uid }}, resume_queue_id={{ resume_queue_id }},
-              resume_track_id={{ resume_track_id }}'
+              db_tag_uid={{ db_tag_uid }}, db_tag_name_from_db={{ db_tag_name_from_db
+              }}, resume_queue_id={{ resume_queue_id }}, resume_track_id={{ resume_track_id
+              }}'
           note: Log why resume data was not written after tag lookup
       else:
       - action: system_log.write
         data:
           level: debug
           logger: playbee.nfc
-          message: 'PlayBee save_resume: current queue is not a PlayBee playlist.
-            reason={{ reason | default(''unknown'') }}, active_playlist_name={{ active_playlist_name
-            }}'
+          message: 'PlayBee save_resume: current queue is not a managed PlayBee playlist.
+            reason={{ reason | default(''unknown'') }}, active_tag_uid={{ active_tag_uid
+            }}, is_dev_card={{ is_dev_card }}, active_playlist_name={{ active_playlist_name
+            }}, db_tag_name={{ db_tag_name }}'
         note: Ignore playback that was not started by a PlayBee playlist
     else:
     - action: system_log.write
@@ -374,7 +383,8 @@ playbee_save_resume:
         logger: playbee.nfc
         message: 'PlayBee save_resume: queue lookup failed with status={{ queue_response.status
           if queue_response is mapping else ''unknown'' }}. reason={{ reason | default(''unknown'')
-          }}, queue_response={{ queue_response }}'
+          }}, active_tag_uid={{ active_tag_uid }}, queue_response={{ queue_response
+          }}'
       note: Log failed queue lookups because resume data cannot be updated
 playbee_volume_change:
   alias: PlayBee | Change volume
