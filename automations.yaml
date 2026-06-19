@@ -1281,3 +1281,20 @@
       entity_id: button.playbee_tagreader_restart
   - delay: 00:00:02
   mode: single
+- id: '1781900740272'
+  alias: PlayBee | Enforce max volume
+  description: ''
+  triggers:
+  - entity_id: media_player.googlehome2758
+    attribute: volume_level
+    above: input_number.playbee_speaker_max_volume
+    trigger: numeric_state
+  actions:
+  - target:
+      entity_id: media_player.googlehome2758
+    data:
+      volume_level: '{{ states(''input_number.playbee_speaker_max_volume'') | float(0.10)
+        }}'
+    action: media_player.volume_set
+  mode: queued
+  max: 10
