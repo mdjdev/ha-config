@@ -884,8 +884,8 @@
         value_template: '{{ trigger.id == ''scanned'' }}'
         note: Only handle scan events in this branch
       - condition: template
-        value_template: '{{ scanned_device_id == ''5027c31bfe14b567944562578ee195bd''
-          }}'
+        value_template: "{{ scanned_device_id in [\n  '5027c31bfe14b567944562578ee195bd',\n
+          \ 'b9cdc2845d361b7c7ef05d864ad713a1'\n] }}"
         note: Ignore scans from other readers
       - condition: template
         value_template: '{{ not has_active_tag }}'
