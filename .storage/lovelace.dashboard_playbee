@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "lovelace.dashboard_playbee",
+  "data": {
+    "config": {
+      "views": [
+        {
+          "type": "sections",
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "media-control",
+                  "entity": "media_player.googlehome2758"
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "tile",
+                  "entity": "input_number.playbee_speaker_max_volume",
+                  "features": [
+                    {
+                      "type": "numeric-input"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": 2
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -11,6 +11,15 @@
         "require_admin": false,
         "mode": "storage",
         "url_path": "dashboard-test"
+      },
+      {
+        "id": "dashboard_playbee",
+        "show_in_sidebar": true,
+        "icon": "mdi:bee",
+        "title": "PlayBee",
+        "require_admin": false,
+        "mode": "storage",
+        "url_path": "dashboard-playbee"
       }
     ]
   }
