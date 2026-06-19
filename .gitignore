@@ -22,6 +22,29 @@
 !.HA_VERSION
 
 ###############################################################################
+# Runtime, cache, add-on, and generated state
+###############################################################################
+
+.cache/
+.cloud/
+.storage/
+.ssh/
+.image/
+
+deps/
+tts/
+tmp/
+image/
+log/
+logs/
+redis/
+backup/
+backups/
+
+addons_config/*/data/
+addons_config/*/logs/
+
+###############################################################################
 # Home Assistant configuration
 ###############################################################################
 
@@ -48,6 +71,15 @@
 
 !python_scripts/
 !python_scripts/**
+
+###############################################################################
+# Dashboards
+###############################################################################
+
+!.storage/
+.storage/*
+!.storage/lovelace_dashboards
+!.storage/lovelace.dashboard_*
 
 ###############################################################################
 # Local code and commands
@@ -98,29 +130,6 @@ esphome/**/*.hex
 !www/
 www/*
 !www/custom-sidebar-config.yaml
-
-###############################################################################
-# Runtime, cache, add-on, and generated state
-###############################################################################
-
-.cache/
-.cloud/
-.storage/
-.ssh/
-.image/
-
-deps/
-tts/
-tmp/
-image/
-log/
-logs/
-redis/
-backup/
-backups/
-
-addons_config/*/data/
-addons_config/*/logs/
 
 ###############################################################################
 # Zigbee, MQTT, and integration state

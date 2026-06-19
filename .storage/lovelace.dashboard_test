@@ -1,0 +1,1411 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "lovelace.dashboard_test",
+  "data": {
+    "config": {
+      "views": [
+        {
+          "icon": "mdi:home-floor-1",
+          "path": "obergeschoss",
+          "title": "Obergeschoss",
+          "cards": [],
+          "type": "sections",
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading_style": "title",
+                  "heading": "Obergeschoss | Badezimmer"
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Badezimmer",
+                  "entities": [
+                    {
+                      "entity": "sensor.hmip_badezimmer_luftsensor_luftfeuchtigkeit",
+                      "name": "RLF",
+                      "color": "green"
+                    },
+                    {
+                      "entity": "sensor.hmip_badezimmer_luftsensor_temperatur",
+                      "name": "Temperatur",
+                      "color": "orange",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Heizkörperventil Status",
+                  "icon": "mdi:radiator",
+                  "entities": [
+                    {
+                      "entity": "sensor.hmip_badezimmer_trv_ventil",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 4,
+                  "show": {
+                    "labels": true
+                  },
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Fenster Status",
+                  "icon": "mdi:window-closed-variant",
+                  "entities": [
+                    {
+                      "entity": "binary_sensor.hmip_badezimmer_fenster",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 120,
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true,
+                  "state_map": [
+                    {
+                      "value": "off",
+                      "label": "Geschlossen"
+                    },
+                    {
+                      "value": "on",
+                      "label": "Offen"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading_style": "title",
+                  "heading": "Obergeschoss | Kinderzimmer"
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Kinderzimmer",
+                  "entities": [
+                    {
+                      "entity": "sensor.hmip_kinderzimmer_luftsensor_luftfeuchtigkeit",
+                      "name": "RLF",
+                      "color": "green"
+                    },
+                    {
+                      "entity": "sensor.hmip_kinderzimmer_luftsensor_temperatur",
+                      "name": "Temperatur",
+                      "color": "orange",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Heizkörperventil Status",
+                  "icon": "mdi:radiator",
+                  "entities": [
+                    {
+                      "entity": "sensor.hmip_kinderzimmer_trv_ventil",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 4,
+                  "show": {
+                    "labels": true
+                  },
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Fenster Status",
+                  "icon": "mdi:window-closed-variant",
+                  "entities": [
+                    {
+                      "entity": "binary_sensor.hmip_kinderzimmer_fenster",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 120,
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true,
+                  "state_map": [
+                    {
+                      "value": "off",
+                      "label": "Geschlossen"
+                    },
+                    {
+                      "value": "on",
+                      "label": "Offen"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading_style": "title",
+                  "heading": "Obergeschoss | Schlafzimmer"
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Schlafzimmer",
+                  "entities": [
+                    {
+                      "entity": "sensor.schlafzimmer_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "green"
+                    },
+                    {
+                      "entity": "sensor.schlafzimmer_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "orange",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Heizkörperventil Status",
+                  "icon": "mdi:radiator",
+                  "entities": [
+                    {
+                      "entity": "sensor.hmip_schlafzimmer_trv_ventil",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 4,
+                  "show": {
+                    "labels": true
+                  },
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Fenster Status",
+                  "icon": "mdi:window-closed-variant",
+                  "entities": [
+                    {
+                      "entity": "binary_sensor.hmip_schlafzimmer_fenster",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 120,
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true,
+                  "state_map": [
+                    {
+                      "value": "off",
+                      "label": "Geschlossen"
+                    },
+                    {
+                      "value": "on",
+                      "label": "Offen"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading_style": "title",
+                  "heading": "Obergeschoss | Büro"
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Büro",
+                  "entities": [
+                    {
+                      "entity": "sensor.buro_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "green"
+                    },
+                    {
+                      "entity": "sensor.buro_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "orange",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Heizkörperventil Status",
+                  "icon": "mdi:radiator",
+                  "entities": [
+                    {
+                      "entity": "sensor.hmip_buro_trv_ventil",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 4,
+                  "show": {
+                    "labels": true
+                  },
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Fenster Status",
+                  "icon": "mdi:window-closed-variant",
+                  "entities": [
+                    {
+                      "entity": "binary_sensor.hmip_buro_fenster",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 120,
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true,
+                  "state_map": [
+                    {
+                      "value": "off",
+                      "label": "Geschlossen"
+                    },
+                    {
+                      "value": "on",
+                      "label": "Offen"
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Bag 02",
+                  "entities": [
+                    {
+                      "entity": "sensor.bag_02_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "green"
+                    },
+                    {
+                      "entity": "sensor.bag_02_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "orange",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Bag 03",
+                  "entities": [
+                    {
+                      "entity": "sensor.bag_03_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "green"
+                    },
+                    {
+                      "entity": "sensor.bag_03_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "orange",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Bag 04",
+                  "entities": [
+                    {
+                      "entity": "sensor.bag_04_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "green"
+                    },
+                    {
+                      "entity": "sensor.bag_04_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "orange",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2
+                },
+                {
+                  "type": "entities",
+                  "entities": [
+                    {
+                      "entity": "button.ugreen_dsm_shutdown"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "badges": [
+            {
+              "type": "entity",
+              "show_name": false,
+              "show_state": true,
+              "show_icon": true,
+              "entity": "sensor.garten_thermo_hygrometer_temperature"
+            },
+            {
+              "type": "entity",
+              "show_name": false,
+              "show_state": true,
+              "show_icon": true,
+              "entity": "sensor.garten_thermo_hygrometer_humidity"
+            }
+          ]
+        },
+        {
+          "icon": "mdi:home-floor-g",
+          "path": "ergeschoss",
+          "title": "Ergeschoss",
+          "cards": [],
+          "type": "sections",
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading_style": "title",
+                  "heading": "Erdgeschoss | Wohnzimmer"
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Wohnzimmer",
+                  "entities": [
+                    {
+                      "entity": "sensor.hmip_wohnzimmer_wandthermostat_luftfeuchtigkeit",
+                      "name": "RLF",
+                      "color": "green"
+                    },
+                    {
+                      "entity": "sensor.hmip_wohnzimmer_wandthermostat_temperatur",
+                      "name": "Temperatur",
+                      "color": "orange",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Heizkörperventil Status (Sofa)",
+                  "icon": "mdi:radiator",
+                  "entities": [
+                    {
+                      "entity": "sensor.hmip_wohnzimmer_trv_sofa_ventil",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 4,
+                  "show": {
+                    "labels": true
+                  },
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Heizkörperventil Status (Flur)",
+                  "icon": "mdi:radiator",
+                  "entities": [
+                    {
+                      "entity": "sensor.hmip_wohnzimmer_trv_flur_ventil",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 4,
+                  "show": {
+                    "labels": true
+                  },
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Fenster Status",
+                  "icon": "mdi:window-closed-variant",
+                  "entities": [
+                    {
+                      "entity": "binary_sensor.hmip_wohnzimmer_schiebetur",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 120,
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true,
+                  "state_map": [
+                    {
+                      "value": "off",
+                      "label": "Geschlossen"
+                    },
+                    {
+                      "value": "on",
+                      "label": "Offen"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading_style": "title",
+                  "heading": "Erdgeschoss | Küche"
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Küche",
+                  "entities": [
+                    {
+                      "entity": "sensor.kuche_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "green"
+                    },
+                    {
+                      "entity": "sensor.kuche_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "orange",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Fenster Status",
+                  "icon": "mdi:window-closed-variant",
+                  "entities": [
+                    {
+                      "entity": "binary_sensor.hmip_kuche_fenster",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 120,
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true,
+                  "state_map": [
+                    {
+                      "value": "off",
+                      "label": "Geschlossen"
+                    },
+                    {
+                      "value": "on",
+                      "label": "Offen"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading_style": "title",
+                  "heading": "Erdgeschoss | Gäste WC"
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Gäste WC",
+                  "entities": [
+                    {
+                      "entity": "sensor.gaste_wc_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "green"
+                    },
+                    {
+                      "entity": "sensor.gaste_wc_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "orange",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Fenster Status",
+                  "icon": "mdi:window-closed-variant",
+                  "entities": [
+                    {
+                      "entity": "binary_sensor.hmip_gaste_wc_fenster",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 120,
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true,
+                  "state_map": [
+                    {
+                      "value": "off",
+                      "label": "Geschlossen"
+                    },
+                    {
+                      "value": "on",
+                      "label": "Offen"
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Heizkörperventil Status",
+                  "icon": "mdi:radiator",
+                  "entities": [
+                    {
+                      "entity": "sensor.hmip_gaste_wc_trv_ventil",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 4,
+                  "show": {
+                    "labels": true
+                  },
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true
+                }
+              ]
+            }
+          ],
+          "badges": [
+            {
+              "type": "entity",
+              "show_name": false,
+              "show_state": true,
+              "show_icon": true,
+              "entity": "sensor.garten_thermo_hygrometer_temperature"
+            },
+            {
+              "type": "entity",
+              "show_name": false,
+              "show_state": true,
+              "show_icon": true,
+              "entity": "sensor.garten_thermo_hygrometer_humidity"
+            }
+          ]
+        },
+        {
+          "title": "Keller",
+          "path": "keller",
+          "icon": "mdi:home-floor-negative-1",
+          "type": "sections",
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Keller | Treppenhaus",
+                  "heading_style": "title"
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Treppenhaus",
+                  "entities": [
+                    {
+                      "entity": "sensor.keller_treppenhaus_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "green"
+                    },
+                    {
+                      "entity": "sensor.keller_treppenhaus_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "orange",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Heizkörperventil Status",
+                  "icon": "mdi:radiator",
+                  "entities": [
+                    {
+                      "entity": "sensor.hmip_keller_trv_ventil",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 4,
+                  "show": {
+                    "labels": true
+                  },
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true
+                },
+                {
+                  "type": "conditional",
+                  "conditions": [
+                    {
+                      "condition": "state",
+                      "entity": "input_select.waschkueche_luftentfeuchter_standort",
+                      "state": "Treppenhaus"
+                    }
+                  ],
+                  "card": {
+                    "type": "custom:mini-graph-card",
+                    "name": "Luftentfeuchter",
+                    "entities": [
+                      {
+                        "entity": "sensor.waschkuche_steckdose_luftentfeuchter_leistung",
+                        "name": "Leistung",
+                        "color": "red"
+                      },
+                      {
+                        "entity": "sensor.waschkuche_steckdose_luftentfeuchter_summe_verbraucht",
+                        "name": "Verbrauch",
+                        "color": "grey",
+                        "show_state": false,
+                        "y_axis": "secondary"
+                      }
+                    ],
+                    "show": {
+                      "labels": true,
+                      "labels_secondary": true
+                    },
+                    "hours_to_show": 24,
+                    "points_per_hour": 6,
+                    "line_width": 2
+                  }
+                },
+                {
+                  "type": "conditional",
+                  "conditions": [
+                    {
+                      "condition": "state",
+                      "entity": "input_select.waschkueche_luftentfeuchter_standort",
+                      "state": "Treppenhaus"
+                    }
+                  ],
+                  "card": {
+                    "type": "tile",
+                    "entity": "switch.waschkuche_steckdose_luftentfeuchter_schalter",
+                    "vertical": false,
+                    "name": "Luftentfeuchter",
+                    "features_position": "bottom"
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "conditional",
+                  "conditions": [
+                    {
+                      "condition": "state",
+                      "entity": "input_select.waschkueche_luftentfeuchter_standort",
+                      "state": "Treppenhaus"
+                    }
+                  ],
+                  "card": {
+                    "type": "tile",
+                    "entity": "sensor.waschkuche_steckdose_luftentfeuchter_leistung",
+                    "name": "Leistung",
+                    "features_position": "bottom",
+                    "vertical": false
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "conditional",
+                  "conditions": [
+                    {
+                      "condition": "state",
+                      "entity": "input_select.waschkueche_luftentfeuchter_standort",
+                      "state": "Treppenhaus"
+                    }
+                  ],
+                  "card": {
+                    "type": "tile",
+                    "name": "Automation",
+                    "entity": "automation.waschkueche_luftentfeuchter",
+                    "features_position": "bottom",
+                    "vertical": false
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "conditional",
+                  "conditions": [
+                    {
+                      "condition": "state",
+                      "entity": "input_select.waschkueche_luftentfeuchter_standort",
+                      "state": "Treppenhaus"
+                    }
+                  ],
+                  "card": {
+                    "type": "tile",
+                    "entity": "automation.waschkuche_luftentfeuchter_voll_benachrichtigung",
+                    "name": "Automation",
+                    "vertical": false,
+                    "features_position": "bottom"
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "conditional",
+                  "conditions": [
+                    {
+                      "condition": "state",
+                      "entity": "input_select.waschkueche_luftentfeuchter_standort",
+                      "state": "Treppenhaus"
+                    }
+                  ],
+                  "card": {
+                    "type": "tile",
+                    "entity": "input_select.waschkueche_luftentfeuchter_standort",
+                    "features_position": "bottom",
+                    "vertical": false
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Keller | Waschküche",
+                  "heading_style": "title"
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Waschküche",
+                  "entities": [
+                    {
+                      "entity": "sensor.waschkuche_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "green"
+                    },
+                    {
+                      "entity": "sensor.waschkuche_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "orange",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Fenster Status",
+                  "icon": "mdi:window-closed-variant",
+                  "entities": [
+                    {
+                      "entity": "binary_sensor.hmip_keller_waschkuche_fenster",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 120,
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true,
+                  "state_map": [
+                    {
+                      "value": "off",
+                      "label": "Geschlossen"
+                    },
+                    {
+                      "value": "on",
+                      "label": "Offen"
+                    }
+                  ]
+                },
+                {
+                  "type": "conditional",
+                  "conditions": [
+                    {
+                      "condition": "state",
+                      "entity": "input_select.waschkueche_luftentfeuchter_standort",
+                      "state": "Waschküche"
+                    }
+                  ],
+                  "card": {
+                    "type": "custom:mini-graph-card",
+                    "name": "Luftentfeuchter",
+                    "entities": [
+                      {
+                        "entity": "sensor.waschkuche_steckdose_luftentfeuchter_leistung",
+                        "name": "Leistung",
+                        "color": "red"
+                      },
+                      {
+                        "entity": "sensor.waschkuche_steckdose_luftentfeuchter_summe_verbraucht",
+                        "name": "Verbrauch",
+                        "color": "grey",
+                        "show_state": false,
+                        "y_axis": "secondary"
+                      }
+                    ],
+                    "show": {
+                      "labels": true,
+                      "labels_secondary": true
+                    },
+                    "hours_to_show": 24,
+                    "points_per_hour": 6,
+                    "line_width": 2
+                  }
+                },
+                {
+                  "type": "conditional",
+                  "conditions": [
+                    {
+                      "condition": "state",
+                      "entity": "input_select.waschkueche_luftentfeuchter_standort",
+                      "state": "Waschküche"
+                    }
+                  ],
+                  "card": {
+                    "type": "tile",
+                    "entity": "switch.waschkuche_steckdose_luftentfeuchter_schalter",
+                    "vertical": false,
+                    "name": "Luftentfeuchter",
+                    "features_position": "bottom"
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "conditional",
+                  "conditions": [
+                    {
+                      "condition": "state",
+                      "entity": "input_select.waschkueche_luftentfeuchter_standort",
+                      "state": "Waschküche"
+                    }
+                  ],
+                  "card": {
+                    "type": "tile",
+                    "entity": "sensor.waschkuche_steckdose_luftentfeuchter_leistung",
+                    "name": "Leistung",
+                    "features_position": "bottom",
+                    "vertical": false
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "conditional",
+                  "conditions": [
+                    {
+                      "condition": "state",
+                      "entity": "input_select.waschkueche_luftentfeuchter_standort",
+                      "state": "Waschküche"
+                    }
+                  ],
+                  "card": {
+                    "type": "tile",
+                    "name": "Automation",
+                    "entity": "automation.waschkueche_luftentfeuchter",
+                    "features_position": "bottom",
+                    "vertical": false
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "conditional",
+                  "conditions": [
+                    {
+                      "condition": "state",
+                      "entity": "input_select.waschkueche_luftentfeuchter_standort",
+                      "state": "Waschküche"
+                    }
+                  ],
+                  "card": {
+                    "type": "tile",
+                    "entity": "automation.waschkuche_luftentfeuchter_voll_benachrichtigung",
+                    "name": "Automation",
+                    "vertical": false,
+                    "features_position": "bottom"
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "conditional",
+                  "conditions": [
+                    {
+                      "condition": "state",
+                      "entity": "input_select.waschkueche_luftentfeuchter_standort",
+                      "state": "Waschküche"
+                    }
+                  ],
+                  "card": {
+                    "type": "tile",
+                    "entity": "input_select.waschkueche_luftentfeuchter_standort",
+                    "features_position": "bottom",
+                    "vertical": false
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Keller | Lager",
+                  "heading_style": "title"
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Lager",
+                  "entities": [
+                    {
+                      "entity": "sensor.lager_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "green"
+                    },
+                    {
+                      "entity": "sensor.lager_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "orange",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Luftentfeuchter",
+                  "entities": [
+                    {
+                      "entity": "sensor.lager_steckdose_luftentfeuchter_leistung",
+                      "name": "Leistung",
+                      "color": "red"
+                    },
+                    {
+                      "entity": "sensor.lager_steckdose_luftentfeuchter_summe_verbraucht",
+                      "name": "Verbrauch",
+                      "color": "grey",
+                      "show_state": false,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 6,
+                  "line_width": 2
+                },
+                {
+                  "type": "tile",
+                  "entity": "switch.lager_steckdose_luftentfeuchter_schalter",
+                  "vertical": false,
+                  "name": "Luftentfeuchter",
+                  "features_position": "bottom"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.lager_steckdose_luftentfeuchter_leistung",
+                  "name": "Leistung",
+                  "features_position": "bottom",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "name": "Automation",
+                  "entity": "automation.lager_luftentfeuchter",
+                  "features_position": "bottom",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "name": "Automation",
+                  "entity": "automation.lager_luftentfeuchter_voll_benachrichtigung",
+                  "features_position": "bottom",
+                  "vertical": false
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Keller | Vorratsraum",
+                  "heading_style": "title"
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Vorratsraum",
+                  "entities": [
+                    {
+                      "entity": "sensor.vorratsraum_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "green"
+                    },
+                    {
+                      "entity": "sensor.vorratsraum_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "orange",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2
+                },
+                {
+                  "type": "tile",
+                  "entity": "switch.vorratsraum_steckdose_ventilator",
+                  "name": "Ventilator",
+                  "vertical": false,
+                  "features_position": "bottom"
+                },
+                {
+                  "type": "tile",
+                  "name": "Automation",
+                  "entity": "automation.vorratsraum_ventilator",
+                  "features_position": "bottom",
+                  "vertical": false
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Keller | Werkraum",
+                  "heading_style": "title"
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Werkraum",
+                  "entities": [
+                    {
+                      "entity": "sensor.werkraum_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "green"
+                    },
+                    {
+                      "entity": "sensor.werkraum_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "orange",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading_style": "title",
+                  "heading": "Keller | Flur"
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Luftentfeuchter",
+                  "entities": [
+                    {
+                      "entity": "sensor.vorratsraum_steckdose_luftentfeuchter_leistung",
+                      "name": "Leistung",
+                      "color": "red"
+                    },
+                    {
+                      "entity": "sensor.vorratsraum_steckdose_luftentfeuchter_summe_verbraucht",
+                      "name": "Verbrauch",
+                      "color": "grey",
+                      "show_state": false,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 6,
+                  "line_width": 2
+                },
+                {
+                  "type": "tile",
+                  "entity": "switch.vorratsraum_steckdose_luftentfeuchter_schalter",
+                  "features_position": "bottom",
+                  "vertical": false,
+                  "name": "Luftentfeuchter"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.vorratsraum_steckdose_luftentfeuchter_leistung",
+                  "features_position": "bottom",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "name": "Automation",
+                  "entity": "automation.flur_luftentfeuchter_kombi",
+                  "features_position": "bottom",
+                  "vertical": false
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Keller | Heizungsraum",
+                  "heading_style": "title"
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Heizungsraum",
+                  "entities": [
+                    {
+                      "entity": "sensor.lywsd03mmc_09_humidity",
+                      "name": "RLF",
+                      "color": "green"
+                    },
+                    {
+                      "entity": "sensor.lywsd03mmc_09_temperature",
+                      "name": "Temperatur",
+                      "color": "orange",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true
+                  },
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Kondenswasser Status",
+                  "icon": "mdi:water-sync",
+                  "entities": [
+                    {
+                      "entity": "binary_sensor.heizungsraum_sensor_kondenswasser_water_leak",
+                      "color": "grey"
+                    }
+                  ],
+                  "hours_to_show": 24,
+                  "points_per_hour": 120,
+                  "line_width": 2,
+                  "aggregate_func": "max",
+                  "smoothing": true,
+                  "state_map": [
+                    {
+                      "value": "off",
+                      "label": "Leer"
+                    },
+                    {
+                      "value": "on",
+                      "label": "Voll"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "max_columns": 4,
+          "cards": [],
+          "badges": [
+            {
+              "type": "entity",
+              "show_name": false,
+              "show_state": true,
+              "show_icon": true,
+              "entity": "sensor.garten_thermo_hygrometer_temperature"
+            },
+            {
+              "type": "entity",
+              "show_name": false,
+              "show_state": true,
+              "show_icon": true,
+              "entity": "sensor.garten_thermo_hygrometer_humidity"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
