@@ -1205,7 +1205,8 @@
     device_id: e16744d488d2d95cfa461b0b10cfd240
     type: action
     subtype: button_1_press_release
-    note: Single press may mean restart current or previous track (depending if second press follows within timeout)
+    note: Single press may mean restart current or previous track (depending if second
+      press follows within timeout)
   conditions: []
   actions:
   - wait_for_trigger:
@@ -1250,4 +1251,33 @@
     data:
       action_type: next_track
     note: Send next track command to the shared navigation script
+  mode: single
+- id: '1781556691438'
+  alias: PlayBee | Tag reader reboot on failure
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - sensor.playbee_tagreader_pn532_warning_log
+    to:
+  conditions:
+  - condition: template
+    value_template: "{{\n  trigger.to_state is not none\n  and trigger.to_state.state
+      not in [none, '', 'unknown', 'unavailable']\n  and 'Requesting tag read failed!'
+      in (trigger.to_state.state | string)\n}}"
+  actions:
+  - action: system_log.write
+    data:
+      level: warning
+      logger: playbee.tagreader
+      message: 'PlayBee tag reader failure automation triggered: {{ trigger.to_state.state
+        }}'
+  - action: notify.mobile_app_obsidian
+    data:
+      title: PlayBee TagReader rebooting
+      message: PN532 Requesting tag read failed!
+  - action: button.press
+    target:
+      entity_id: button.playbee_tagreader_restart
+  - delay: 00:00:02
   mode: single

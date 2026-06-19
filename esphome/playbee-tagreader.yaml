@@ -6,6 +6,12 @@ esphome:
   name: ${name}
   friendly_name: ${friendly_name}
   name_add_mac_suffix: false
+  on_boot:
+    priority: -100
+    then:
+      - text_sensor.template.publish:
+          id: pn532_warning_log
+          state: ""
 
 esp8266:
   board: d1_mini
@@ -19,6 +25,20 @@ wifi:
 captive_portal:
 
 logger:
+  level: DEBUG
+  on_message:
+    level: WARN
+    then:
+      - if:
+          condition:
+            lambda: |-
+              return strcmp(tag, "component") == 0 &&
+                     strstr(message, "Requesting tag read failed!") != nullptr;
+          then:
+            - text_sensor.template.publish:
+                id: pn532_warning_log
+                state: !lambda |-
+                  return std::string(message) + " | boot_ms=" + to_string(millis());
 
 api:
 
@@ -135,6 +155,12 @@ pn532_i2c:
           then:
             - script.execute: confirm_removed
 
+button:
+  - platform: restart
+    name: "Restart"
+    id: device_restart
+    entity_category: diagnostic
+
 binary_sensor:
   - platform: status
     name: "Status"
@@ -151,6 +177,13 @@ text_sensor:
     id: current_tag_uid
     update_interval: never
     icon: mdi:nfc
+
+  - platform: template
+    name: "PN532 Warning Log"
+    id: pn532_warning_log
+    update_interval: never
+    entity_category: diagnostic
+    icon: mdi:alert
 
   - platform: version
     hide_timestamp: true
