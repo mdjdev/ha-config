@@ -32,13 +32,19 @@ logger:
       - if:
           condition:
             lambda: |-
-              return strcmp(tag, "component") == 0 &&
+              return strcmp(tag, "pn532") == 0 &&
                      strstr(message, "Requesting tag read failed!") != nullptr;
           then:
             - text_sensor.template.publish:
                 id: pn532_warning_log
                 state: !lambda |-
-                  return std::string(message) + " | boot_ms=" + to_string(millis());
+                  std::string clean;
+                  for (const char *p = message; *p != '\0'; ++p) {
+                    const unsigned char c = static_cast<unsigned char>(*p);
+                    if (c >= 32 && c <= 126) clean += static_cast<char>(c);
+                  }
+                  return std::string("[W][") + tag + "]: " + clean +
+                         " | boot_ms=" + to_string(millis());
 
 api:
 

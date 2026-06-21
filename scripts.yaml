@@ -458,3 +458,33 @@ playbee_track_navigation:
           entity_id: media_player.googlehome2758
         note: Ask the player to go to the next track
   description: ''
+playbee_make_announcement:
+  alias: PlayBee | Make announcement
+  mode: queued
+  fields:
+    message:
+      required: true
+  sequence:
+  - variables:
+      media_player: media_player.googlehome2758
+      old_volume: '{{ state_attr(media_player, ''volume_level'') | float(0.25) }}'
+  - target:
+      entity_id: '{{ media_player }}'
+    data:
+      volume_level: 0.15
+    action: media_player.volume_set
+  - target:
+      entity_id: tts.piper
+    data:
+      media_player_entity_id: '{{ media_player }}'
+      message: '{{ message }}'
+    action: tts.speak
+  - wait_template: '{{ not is_state(media_player, ''playing'') }}'
+    timeout: 00:00:10
+    continue_on_timeout: true
+  - target:
+      entity_id: '{{ media_player }}'
+    data:
+      volume_level: '{{ old_volume }}'
+    action: media_player.volume_set
+  - delay: 00:00:01

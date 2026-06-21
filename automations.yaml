@@ -1253,7 +1253,7 @@
     note: Send next track command to the shared navigation script
   mode: single
 - id: '1781556691438'
-  alias: PlayBee | Tag reader reboot on failure
+  alias: PlayBee | TagReader reboot on failure
   description: ''
   triggers:
   - trigger: state
@@ -1276,10 +1276,14 @@
     data:
       title: PlayBee TagReader rebooting
       message: PN532 Requesting tag read failed!
+  - action: script.playbee_make_announcement
+    data:
+      message: Rebooting
+    note: Play spoken message via media player
   - action: button.press
     target:
       entity_id: button.playbee_tagreader_restart
-  - delay: 00:00:02
+  - delay: 00:00:10
   mode: single
 - id: '1781900740272'
   alias: PlayBee | Enforce max volume
