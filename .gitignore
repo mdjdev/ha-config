@@ -107,6 +107,8 @@ __pycache__/
 !esphome/
 !esphome/**
 
+esphome/.device-builder.json
+esphome/.device-builder-preferences.json
 esphome/.esphome/
 esphome/.pioenvs/
 esphome/.piolibdeps/
