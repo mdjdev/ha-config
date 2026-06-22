@@ -12,6 +12,14 @@ esphome:
       - text_sensor.template.publish:
           id: pn532_warning_log
           state: ""
+      - wait_until:
+          api.connected:
+      - delay: 1s
+      - homeassistant.event:
+          event: esphome.playbee_tagreader_booted
+          data:
+            device: ${name}
+            friendly_name: ${friendly_name}
 
 esp8266:
   board: d1_mini

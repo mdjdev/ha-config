@@ -1302,3 +1302,14 @@
     action: media_player.volume_set
   mode: queued
   max: 10
+- id: '1782073767033'
+  alias: PlayBee | TagReader booted
+  description: ''
+  triggers:
+  - event_type: esphome.playbee_tagreader_booted
+    trigger: event
+  actions:
+  - action: script.playbee_make_announcement
+    data:
+      message: Booted
+    note: Play spoken message via media player
