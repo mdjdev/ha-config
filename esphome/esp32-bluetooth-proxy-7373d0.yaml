@@ -18,3 +18,6 @@ api:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+  power_save_mode: NONE
+  reboot_timeout: 5min
+  output_power: 8.5dB
