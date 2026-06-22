@@ -66,6 +66,14 @@ order:
       ]]]
     attributes:
       data-group-item: "true"
+      data-group-open: |
+        [[[
+          const current = window.location.pathname;
+          const active = group_paths.apps.some(
+            (path) => current === path || current.includes(path)
+          );
+          return (refs.apps_group_open || active) ? "true" : "false";
+        ]]]
     on_click:
       action: javascript
       code: |
@@ -86,6 +94,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "apps"
 
   - item: AdGuard Home
     exact: true
@@ -100,6 +109,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "apps"
 
   - item: Zigbee2MQTT
     exact: true
@@ -114,6 +124,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "apps"
 
   - item: File editor
     exact: true
@@ -128,6 +139,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "apps"
 
   - item: Music Assistant
     exact: true
@@ -142,6 +154,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "apps"
   
   - item: SQLite Web
     exact: true
@@ -156,6 +169,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "apps"
   
   - item: ESPHome Builder
     exact: true
@@ -170,6 +184,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "apps"
 
   - item: Terminal
     exact: true
@@ -184,6 +199,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "apps"
 
   - item: Log Viewer
     exact: true
@@ -198,6 +214,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "apps"
 
   - item: Version Control
     exact: true
@@ -212,6 +229,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "apps"
 
   - item: Entity Manager
     exact: true
@@ -226,6 +244,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "apps"
       
   - item: Home Assistant MCP Server
     exact: true
@@ -240,6 +259,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "apps"
 
   - new_item: true
     item: system_group_toggle
@@ -255,6 +275,14 @@ order:
       ]]]
     attributes:
       data-group-item: "true"
+      data-group-open: |
+        [[[
+          const current = window.location.pathname;
+          const active = group_paths.system.some(
+            (path) => current === path || current.includes(path)
+          );
+          return (refs.system_group_open || active) ? "true" : "false";
+        ]]]
     on_click:
       action: javascript
       code: |
@@ -273,6 +301,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "system"
 
   - new_item: true
     item: Entwicklerwerkzeuge
@@ -289,6 +318,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "system"
 
   - item: Backups
     exact: true
@@ -303,6 +333,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "system"
 
   - item: Verlauf
     exact: true
@@ -317,6 +348,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "system"
 
   - item: Aktivität
     exact: true
@@ -331,6 +363,7 @@ order:
       ]]]
     attributes:
       data-nested-item: "true"
+      data-nested-group: "system"
 
   - item: Energie
     exact: true
@@ -345,54 +378,29 @@ order:
     hide: true
 
 styles: |
-  ha-md-list-item[data-nested-item="true"] {
-    --nested-hover-bg: rgba(37, 37, 37, 1);
-    --md-ripple-hover-opacity: 0 !important;
-    --custom-sidebar-item-background-hover-opacity: 0 !important;
-
-    position: relative;
-    margin-left: 0 !important;
-    padding-left: 0 !important;
-  }
-
-  ha-md-list-item[data-nested-item="true"]::before {
-    left: 4px !important;
-    right: -4px !important;
-    border-radius: inherit !important;
-  }
-
-  ha-md-list-item[data-nested-item="true"]:not(.selected)::before {
-    background: transparent !important;
-    opacity: 0 !important;
-  }
-
-  ha-md-list-item[data-nested-item="true"]:hover:not(.selected)::before {
-    background: var(--nested-hover-bg) !important;
-    opacity: 1 !important;
-  }
-
-  ha-md-list-item[data-nested-item="true"]::after {
-    content: "";
-    position: absolute;
-    left: 12px;
-    top: 10px;
-    bottom: 10px;
-    width: 1px;
-    background: rgba(255, 255, 255, 0.14);
-    pointer-events: none;
-    z-index: 2;
-  }
-
-  ha-md-list-item[data-nested-item="true"] .item-text {
-    padding-left: 0 !important;
-  }
-
-  ha-md-list-item[data-nested-item="true"] ha-icon[slot="start"],
-  ha-md-list-item[data-nested-item="true"] ha-svg-icon[slot="start"] {
-    margin-left: 8px !important;
-    opacity: 0.82;
-  }
-
-  ha-md-list-item[data-group-item="true"] {
+  ha-list-item-button[data-group-item="true"] {
     font-weight: 600;
+    margin: 4px 4px 2px 4px;
+    background: transparent !important;
+  }
+
+  ha-list-item-button[data-nested-item="true"] {
+    margin: 0 4px !important;
+    padding-left: 0 !important;
+    background: transparent !important;
+    border-radius: 8px;
+  }
+
+  ha-list-item-button[data-nested-item="true"]:hover {
+    background: rgba(255, 255, 255, 0.035) !important;
+  }
+
+  ha-list-item-button[data-nested-item="true"] [slot="start"] {
+    margin-left: 14px !important;
+    opacity: 0.72;
+  }
+
+  ha-list-item-button[data-nested-item="true"] .item-text {
+    padding-left: 8px !important;
+    opacity: 0.92;
   }
