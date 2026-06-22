@@ -168,13 +168,6 @@ shell_command:
   playbee_db_clear_resume: >-
     python3 /config/scripts/playbee_db.py clear_resume
     "{{ tag_uid }}"
-    
-  # HAGit helper commands.
-  hagit_init_keys: bash /config/shell_commands/hagit_init_keys.sh
-  hagit_check_auth: bash /config/shell_commands/hagit_check_auth.sh
-  hagit_write_gitignore: bash /config/shell_commands/hagit_write_gitignore.sh "{{ content }}"
-  hagit_init_repo: bash /config/shell_commands/hagit_init_repo.sh
-  hagit_commit_changes: bash /config/shell_commands/hagit_commit_changes.sh
 
   # Keep the remote Chromium target reachable.
   keep_chromium_awake: >-
@@ -235,42 +228,6 @@ rest_command:
         }
       }
     content_type: "application/json; charset=utf-8"
-
-
-# Command line sensors expose shell command results as Home Assistant entities.
-# Docs: https://www.home-assistant.io/integrations/command_line/
-command_line:
-  - binary_sensor:
-      name: HAGit - .git initialisiert
-      unique_id: "binary_sensor.hagit_git_initialisiert"
-      command: '[ -d /config/.git ] && echo "ON" || echo "OFF"'
-      scan_interval: 60
-      payload_on: "ON"
-      payload_off: "OFF"
-
-  - binary_sensor:
-      name: HAGit - Privater Schlüssel existiert
-      unique_id: "binary_sensor.hagit_privater_schlussel_existiert"
-      command: '[ -f /config/.ssh/id_rsa_github ] && echo "ON" || echo "OFF"'
-      scan_interval: 60
-      payload_on: "ON"
-      payload_off: "OFF"
-
-  - binary_sensor:
-      name: HAGit - .gitignore existiert
-      unique_id: "binary_sensor.hagit_gitignore_existiert"
-      command: '[ -f /config/.gitignore ] && echo "ON" || echo "OFF"'
-      scan_interval: 60
-      payload_on: "ON"
-      payload_off: "OFF"
-
-  - binary_sensor:
-      name: HAGit - git status
-      unique_id: "binary_sensor.hagit_git_status"
-      command: 'git -C /config status --porcelain | grep -q . && echo "ON" || echo "OFF"'
-      scan_interval: 60
-      payload_on: "ON"
-      payload_off: "OFF"
 
 
 # Automations are loaded from a separate file managed in YAML or the UI.
