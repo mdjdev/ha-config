@@ -16,6 +16,7 @@ js_variables:
       - _logviewer
       - _home-assistant-version-control
       - /entity_manager
+      - _ha_mcp
     system:
       - /config/dashboard
       - /config/developer-tools
@@ -30,6 +31,10 @@ jsrefs:
 order:
 
   - item: Home
+    exact: true
+    hide: false
+    
+  - item: PlayBee
     exact: true
     hide: false
 
@@ -209,6 +214,20 @@ order:
       data-nested-item: "true"
 
   - item: Entity Manager
+    exact: true
+    hide: |
+      [[[
+        const open = refs.apps_group_open;
+        const current = window.location.pathname;
+        const active = group_paths.apps.some(
+          (path) => current === path || current.includes(path)
+        );
+        return !(open || active);
+      ]]]
+    attributes:
+      data-nested-item: "true"
+      
+  - item: Home Assistant MCP Server
     exact: true
     hide: |
       [[[
