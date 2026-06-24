@@ -55,6 +55,8 @@ logger:
                          " | boot_ms=" + to_string(millis());
 
 api:
+  encryption:
+    key: !secret playbee_tagreader__encryption_key
 
 ota:
   - platform: esphome
