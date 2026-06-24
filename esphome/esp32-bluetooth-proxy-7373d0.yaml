@@ -12,7 +12,7 @@ esphome:
   
 api:
   encryption:
-    key: U+SRXhOBXVRjJM10L4PyrPOFdfegpF0DuhoSIsJIUwA=
+    key: !secret esp32_bluetooth_proxy_7373d0__encryption_key
 
 
 wifi:
