@@ -169,6 +169,8 @@ home-assistant-rollback.log
 *.db-shm
 *.db-wal
 
+playbee/exports/tags/*.json
+
 ###############################################################################
 # Secrets, credentials, certificates, and local auth material
 ###############################################################################

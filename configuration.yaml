@@ -162,6 +162,9 @@ shell_command:
     python3 /config/scripts/playbee_db.py clear_resume
     "{{ tag_uid }}"
 
+  playbee_export_json: >-
+   python3 /config/scripts/playbee_db.py export_all_tables_json
+
   # Keep the remote Chromium target reachable.
   keep_chromium_awake: >-
     /usr/bin/curl -ksS --max-time 15 -o /dev/null https://cs.dsja.de:8443/

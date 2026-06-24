@@ -1130,3 +1130,19 @@
     data:
       message: Booted
     note: Play spoken message via media player
+- id: '1782331154638'
+  alias: PlayBee | Database backup
+  description: ''
+  triggers:
+  - trigger: time_pattern
+    hours: '*'
+    minutes: '0'
+  conditions:
+  - condition: time
+    after: '10:00:00'
+    before: '23:00:00'
+  actions:
+  - action: shell_command.playbee_export_json
+    metadata: {}
+    data: {}
+  mode: single

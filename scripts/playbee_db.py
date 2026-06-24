@@ -1,17 +1,28 @@
 #!/usr/bin/env python3
 import json
+import os
 import re
 import sqlite3
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 DB_PATH = "/config/playbee.db"
+EXPORT_DIR = "/config/playbee/exports"
+DEFAULT_RETENTION = 14
 
 
 def connect():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def validate_identifier(value):
+    value = str(value or "")
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", value):
+        raise ValueError(f"invalid identifier: {value}")
+    return value
 
 
 def normalize_shuffle_mode(value):
@@ -162,6 +173,99 @@ def get_tag_by_name(name):
     print(json.dumps(row_to_tag_payload(row, {"name": name})))
 
 
+def prune_json_exports(retention_days):
+    deleted = []
+    export_dir = Path(EXPORT_DIR)
+
+    if not export_dir.exists():
+        return deleted
+
+    cutoff = datetime.now(timezone.utc).timestamp() - (retention_days * 86400)
+
+    for path in export_dir.rglob("*.json"):
+        try:
+            if path.is_file() and path.stat().st_mtime < cutoff:
+                path.unlink()
+                deleted.append(str(path))
+        except FileNotFoundError:
+            pass
+
+    return deleted
+
+
+def list_user_tables(conn):
+    rows = conn.execute("""
+        SELECT name
+        FROM sqlite_master
+        WHERE type = 'table'
+          AND name NOT LIKE 'sqlite_%'
+        ORDER BY name
+    """).fetchall()
+    return [row["name"] for row in rows]
+
+
+def list_table_columns(conn, table_name):
+    table_name = validate_identifier(table_name)
+    rows = conn.execute(f'PRAGMA table_info("{table_name}")').fetchall()
+    if not rows:
+        raise ValueError(f"table not found: {table_name}")
+    return [row["name"] for row in rows]
+
+
+def export_table_json(conn, table_name, timestamp):
+    table_name = validate_identifier(table_name)
+    columns = list_table_columns(conn, table_name)
+
+    table_dir = os.path.join(EXPORT_DIR, table_name)
+    os.makedirs(table_dir, exist_ok=True)
+
+    quoted_columns = ", ".join(f'"{col}"' for col in columns)
+    rows = conn.execute(f'SELECT {quoted_columns} FROM "{table_name}"').fetchall()
+
+    data = []
+    for row in rows:
+        item = {}
+        for col in columns:
+            item[col] = row[col]
+        data.append(item)
+
+    export_path = os.path.join(table_dir, f"{table_name}_{timestamp}.json")
+
+    with open(export_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+
+    return {
+        "table": table_name,
+        "row_count": len(data),
+        "export_path": export_path
+    }
+
+
+def export_all_tables_json(retention_days=DEFAULT_RETENTION):
+    os.makedirs(EXPORT_DIR, exist_ok=True)
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
+
+    conn = connect()
+    try:
+        tables = list_user_tables(conn)
+        exports = [export_table_json(conn, table_name, timestamp) for table_name in tables]
+    finally:
+        conn.close()
+
+    deleted_exports = prune_json_exports(retention_days)
+
+    print(json.dumps({
+        "ok": True,
+        "action": "export_all_tables_json",
+        "export_dir": EXPORT_DIR,
+        "retention_days": retention_days,
+        "deleted_exports": deleted_exports,
+        "table_count": len(exports),
+        "tables": exports
+    }))
+
+
 def main():
     if len(sys.argv) < 2:
         print(json.dumps({"ok": False, "error": "missing action"}))
@@ -179,6 +283,11 @@ def main():
         get_tag_by_id(sys.argv[2])
     elif action == "get_tag_by_name" and len(sys.argv) == 3:
         get_tag_by_name(sys.argv[2])
+    elif action == "export_all_tables_json":
+        retention_days = DEFAULT_RETENTION
+        if len(sys.argv) == 3:
+            retention_days = int(sys.argv[2])
+        export_all_tables_json(retention_days)
     else:
         print(json.dumps({"ok": False, "error": "invalid arguments"}))
         sys.exit(1)
