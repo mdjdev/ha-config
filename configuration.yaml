@@ -142,13 +142,6 @@ recorder:
 shell_command:
   # PlayBee database commands.
   playbee_db_init: "python3 /config/scripts/playbee_db.py init"
-#   playbee_db_upsert_tag: >-
-#     python3 /config/scripts/playbee_db.py upsert_tag
-#     "{{ tag_uid }}"
-#     "{{ name }}"
-#     "{{ media_url }}"
-#     "{{ shuffle }}"
-#     "{{ repeat_mode }}"
 
   playbee_db_get_tag_by_id: >-
     python3 /config/scripts/playbee_db.py get_tag_by_id

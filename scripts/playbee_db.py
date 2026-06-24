@@ -85,30 +85,6 @@ def init_db():
     print(json.dumps({"ok": True, "action": "init"}))
 
 
-def upsert_tag(tag_uid, name, media_url, shuffle_mode, repeat_mode, resume_mode):
-    conn = connect()
-    conn.execute("""
-        INSERT INTO tags (tag_uid, name, media_url, shuffle_mode, repeat_mode, resume_mode)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT(tag_uid) DO UPDATE SET
-            name=excluded.name,
-            media_url=excluded.media_url,
-            shuffle_mode=excluded.shuffle_mode,
-            repeat_mode=excluded.repeat_mode,
-            resume_mode=excluded.resume_mode
-    """, (
-        tag_uid,
-        name,
-        media_url,
-        normalize_shuffle_mode(shuffle_mode),
-        normalize_repeat_mode(repeat_mode),
-        normalize_resume_mode(resume_mode)
-    ))
-    conn.commit()
-    conn.close()
-    print(json.dumps({"ok": True, "action": "upsert_tag", "tag_uid": tag_uid}))
-
-
 def save_resume(tag_uid, queue_id, track_id, position):
     resume_data = json.dumps({
         "last_updated": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -195,15 +171,6 @@ def main():
 
     if action == "init":
         init_db()
-    elif action == "upsert_tag" and len(sys.argv) == 8:
-        upsert_tag(
-            sys.argv[2],
-            sys.argv[3],
-            sys.argv[4],
-            sys.argv[5],
-            sys.argv[6],
-            sys.argv[7]
-        )
     elif action == "save_resume" and len(sys.argv) == 6:
         save_resume(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
     elif action == "clear_resume" and len(sys.argv) == 3:
