@@ -165,6 +165,12 @@ shell_command:
   playbee_export_json: >-
    python3 /config/scripts/playbee_db.py export_all_tables_json
 
+  # PlayBee queue commands
+  playbee_queue_find_item_for_track: >-
+    python3 /config/scripts/playbee_queue.py find_item_for_track
+    "{{ queue_id }}"
+    "{{ track_id }}"
+
   # Keep the remote Chromium target reachable.
   keep_chromium_awake: >-
     /usr/bin/curl -ksS --max-time 15 -o /dev/null https://cs.dsja.de:8443/
@@ -188,23 +194,6 @@ rest_command:
         }
       }
     content_type: "application/json; charset=utf-8"
-    
-  playbee_ma_resolve_item_by_uri:
-    url: !secret playbee_ma_api_url
-    method: POST
-    headers:
-      accept: "application/json, text/html"
-      authorization: !secret playbee_ma_token
-    payload: >-
-      {
-        "message_id": "{{ now().timestamp() | int }}",
-        "command": "music/item_by_uri",
-        "args": {
-          "uri": "{{ uri }}",
-          "allow_update_metadata": true
-        }
-      }
-    content_type: "application/json; charset=utf-8"
 
   playbee_ma_resume:
     url: !secret playbee_ma_api_url
@@ -215,12 +204,11 @@ rest_command:
     payload: >-
       {
         "message_id": "{{ now().timestamp() | int }}",
-        "command": "player_queues/play_media",
+        "command": "player_queues/play_index",
         "args": {
           "queue_id": "{{ queue_id }}",
-          "media": "{{ media_url }}",
-          "radio_mode": false,
-          "start_item": "{{ track_id }}"
+          "index": "{{ item_id }}",
+          "seek_position": {{ seek_position | int(0) }}
         }
       }
     content_type: "application/json; charset=utf-8"

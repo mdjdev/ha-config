@@ -96,134 +96,153 @@ playbee_play_media_based_on_nfc_tag:
   - action: media_player.clear_playlist
     target:
       entity_id: '{{ media_player }}'
-    note: Reset the player queue before new playback or resume
+    note: Clear the player queue before rebuilding it for fresh playback or indexed
+      resume
   - action: media_player.shuffle_set
     target:
       entity_id: '{{ media_player }}'
     data:
       shuffle: '{{ shuffle_mode == ''on'' }}'
-    note: Apply per tag shuffle setting before playback starts
+    note: Set shuffle before playback has started
   - action: media_player.repeat_set
     target:
       entity_id: '{{ media_player }}'
     data:
       repeat: '{{ repeat_mode }}'
-    note: Apply per tag repeat mode before playback starts
+    note: Set repeat before playback has started
+  - action: system_log.write
+    data:
+      level: info
+      logger: playbee.nfc
+      message: 'PlayBee start playback: tag={{ tag_uid }}, media={{ media_url }},
+        queue_id={{ queue_id }}, shuffle_mode={{ shuffle_mode }}, repeat_mode={{ repeat_mode
+        }}, resume_mode={{ resume_mode }}, resume_has_data={{ resume_has_data }},
+        resume_is_fresh={{ resume_is_fresh }}'
+    note: Record playback input
+  - action: music_assistant.play_media
+    target:
+      entity_id: '{{ media_player }}'
+    data:
+      media_id: '{{ media_url }}'
+      media_type: playlist
+      enqueue: replace
+    note: Start playlist playback through the Music Assistant action so the full queue
+      is built reliably in all cases
   - if:
     - condition: template
       value_template: '{{ do_resume }}'
       note: Resume only when stored queue and track data are present and TTL is still
         valid
     then:
-    - action: rest_command.playbee_ma_resolve_item_by_uri
+    - action: system_log.write
       data:
-        uri: '{{ media_url }}'
-      response_variable: resolved_item_response
-      note: Resolve external provider URI to the MA internal library playlist URI
+        level: info
+        logger: playbee.nfc
+        message: 'PlayBee resuming track:  track={{ track_id }}, position={{ position
+          }}'
+      note: Log resume input
+    - action: media_player.volume_mute
+      target:
+        entity_id: '{{ media_player }}'
+      data:
+        is_volume_muted: true
+      note: Temporarily mute the player so the queue jump does not create an audible
+        track change
+    - action: shell_command.playbee_queue_find_item_for_track
+      data:
+        queue_id: '{{ queue_id }}'
+        track_id: '{{ track_id }}'
+      response_variable: queue_match_response
+      note: Query Music Assistant from the helper script and return only the matched
+        queue item id and index
     - if:
       - condition: template
-        value_template: '{{ resolved_item_response is mapping and resolved_item_response.status
-          == 200 }}'
-        note: Continue only when the MA resolve call succeeded
+        value_template: '{{ queue_match_response.returncode != 0 }}'
+        note: Abort when the helper script fails to query or parse Music Assistant
+          queue items
       then:
-      - variables:
-          resolved_item: "{% set content = resolved_item_response.content if resolved_item_response
-            is mapping else none %} {% if content is mapping %}\n  {{ content }}\n{%
-            elif content is string %}\n  {{ content | from_json({}, default={}) }}\n{%
-            else %}\n  {{ {} }}\n{% endif %}"
-          resolved_media_url: '{{ resolved_item.get(''uri'', '''') }}'
-          resolved_media_provider: '{{ resolved_item.get(''provider'', '''') }}'
-          resolved_media_type: '{{ resolved_item.get(''media_type'', '''') }}'
-        note: Parse the resolved MA item and keep only the fields needed for resume
-      - if:
-        - condition: template
-          value_template: "{{\n  resolved_media_url in ['', 'unknown', 'unavailable']\n
-            \ or resolved_media_provider != 'library'\n  or resolved_media_type !=
-            'playlist'\n}}"
-          note: Resume requires a valid MA library playlist URI
-        then:
-        - action: system_log.write
-          data:
-            level: warning
-            logger: playbee.nfc
-            message: Could not resolve internal library playlist URI. tag_uid={{ tag_uid
-              }}, media_url={{ media_url }}, resolved_item={{ resolved_item }}
-          note: Log unexpected resolve results before aborting resume
-        - stop: Invalid resolved playlist URI
       - action: system_log.write
         data:
-          level: info
+          level: error
           logger: playbee.nfc
-          message: 'PlayBee resuming: tag={{ tag_uid }}, media={{ media_url }}, resolved_media={{
-            resolved_media_url }}, queue_id={{ queue_id }}, track={{ track_id }},
-            position={{ position }}, shuffle_mode={{ shuffle_mode }}, repeat_mode={{
-            repeat_mode }}, resume_mode={{ resume_mode }}, resume_last_updated={{
-            resume_last_updated }}, resume_age_seconds={{ resume_age_seconds }}, resume_ttl_seconds={{
-            resume_ttl_seconds }}'
-        note: Record the normalized resume input sent to Music Assistant
+          message: PlayBee queue match helper failed. returncode={{ queue_match_response.returncode
+            }}, stdout={{ queue_match_response.stdout }}, stderr={{ queue_match_response.stderr
+            }}
+        note: Preserve stdout and stderr from the queue lookup helper for troubleshooting
+      - action: media_player.volume_mute
+        target:
+          entity_id: '{{ media_player }}'
+        data:
+          is_volume_muted: false
+        note: Unmute before stopping
+      - stop: Queue match helper failed
+    - variables:
+        queue_match: "{% set raw = queue_match_response.stdout | trim %} {% if queue_match_response.returncode
+          == 0 and raw.startswith('{') %}\n  {{ raw | from_json }}\n{% else %}\n  {{
+          {} }}\n{% endif %}"
+        matched_queue_item_id: '{{ queue_match.get(''queue_item_id'', '''') }}'
+        matched_index: '{{ queue_match.get(''index'', -1) }}'
+        matched_found: '{{ queue_match.get(''found'', false) }}'
+      note: Parse the compact queue lookup result returned by the helper script
+    - if:
+      - condition: template
+        value_template: '{{ matched_found and matched_queue_item_id not in ['''',
+          none] }}'
+        note: Continue only when the helper found the stored track in the rebuilt
+          queue
+      then:
       - action: rest_command.playbee_ma_resume
         data:
           queue_id: '{{ queue_id }}'
-          track_id: '{{ track_id }}'
-          media_url: '{{ resolved_media_url }}'
+          item_id: '{{ matched_queue_item_id }}'
+          seek_position: '{{ position }}'
         response_variable: resume_response
-        note: Ask Music Assistant to resume the resolved playlist and target track
+        note: Jump directly to the matched queue item id and send the seek position
+          in the same Music Assistant API call
       - if:
         - condition: template
           value_template: '{{ resume_response is not mapping or resume_response.status
             != 200 }}'
-          note: Abort if the MA resume call failed
+          note: Abort when Music Assistant rejects the play-index request for the
+            matched queue item id
         then:
         - action: system_log.write
           data:
             level: error
             logger: playbee.nfc
-            message: 'PlayBee resume failed: {{ resume_response }}'
-          note: Preserve the full MA resume response in the log
-        - stop: Resume failed
-      - wait_template: '{{ states(media_player) in [''playing'', ''buffering''] }}'
-        timeout: 00:00:10
-        continue_on_timeout: true
-        note: Give the player time to enter a playable state before seeking
-      - if:
-        - condition: template
-          value_template: '{{ position | int > 5 }}'
-          note: Skip seek when the saved position is too close to the start
-        then:
-        - action: media_player.media_seek
+            message: PlayBee resume failed. queue_item_id={{ matched_queue_item_id
+              }}, index={{ matched_index }}, response={{ resume_response }}
+          note: Preserve the play-index failure together with the matched queue identifiers
+        - action: media_player.volume_mute
           target:
             entity_id: '{{ media_player }}'
           data:
-            seek_position: '{{ position | int }}'
-          note: Seek to the saved elapsed position after resume starts
+            is_volume_muted: false
+          note: Unmute before stopping
+        - stop: Play index failed
       else:
       - action: system_log.write
         data:
-          level: error
+          level: warning
           logger: playbee.nfc
-          message: 'URI resolve failed: {{ resolved_item_response }}'
-        note: Log failed playlist resolution responses from Music Assistant
-      - stop: URI resolve failed
-    else:
-    - action: system_log.write
-      data:
-        level: info
-        logger: playbee.nfc
-        message: 'PlayBee fresh playback: tag={{ tag_uid }}, media={{ media_url }},
-          shuffle_mode={{ shuffle_mode }}, repeat_mode={{ repeat_mode }}, resume_mode={{
-          resume_mode }}, resume_has_data={{ resume_has_data }}, resume_is_fresh={{
-          resume_is_fresh }}'
-      note: Record why playback starts fresh instead of resuming
-    - action: media_player.play_media
+          message: Resume track not found in queue. tag={{ tag_uid }}, queue_id={{
+            queue_id }}, track_id={{ track_id }}, helper_result={{ queue_match_response.stdout
+            }}
+        note: Log helper output when the stored track cannot be found in the rebuilt
+          queue
+      - action: media_player.volume_mute
+        target:
+          entity_id: '{{ media_player }}'
+        data:
+          is_volume_muted: false
+        note: Unmute before stopping
+      - stop: Resume track not found
+    - action: media_player.volume_mute
       target:
         entity_id: '{{ media_player }}'
       data:
-        metadata: {}
-        media:
-          media_content_id: '{{ media_url }}'
-          media_content_type: music
-          metadata: {}
-      note: Start normal playback from the tag media URL without resume
+        is_volume_muted: false
+      note: Unmute the player after the playback target has been selected
   description: ''
 playbee_stop_media:
   alias: PlayBee | Stop media
