@@ -332,31 +332,6 @@
                 },
                 {
                   "type": "custom:mini-graph-card",
-                  "name": "Bag 02",
-                  "entities": [
-                    {
-                      "entity": "sensor.bag_02_temperatur_und_luftfeuchtigkeitssensor_humidity",
-                      "name": "RLF",
-                      "color": "green"
-                    },
-                    {
-                      "entity": "sensor.bag_02_temperatur_und_luftfeuchtigkeitssensor_temperature",
-                      "name": "Temperatur",
-                      "color": "orange",
-                      "show_state": true,
-                      "y_axis": "secondary"
-                    }
-                  ],
-                  "show": {
-                    "labels": true,
-                    "labels_secondary": true
-                  },
-                  "hours_to_show": 24,
-                  "points_per_hour": 2,
-                  "line_width": 2
-                },
-                {
-                  "type": "custom:mini-graph-card",
                   "name": "Bag 03",
                   "entities": [
                     {
