@@ -855,44 +855,49 @@
   triggers:
   - trigger: event
     event_type: tag_scanned
-    id: scanned
-    note: Trigger when an NFC tag is scanned by Home Assistant
+    event_data:
+      device_id: 5027c31bfe14b567944562578ee195bd
+    id: scanned_v1
+    note: Trigger when PlayBee reader v1 scans a tag
+  - trigger: event
+    event_type: tag_scanned
+    event_data:
+      device_id: b9cdc2845d361b7c7ef05d864ad713a1
+    id: scanned_v2
+    note: Trigger when PlayBee reader v2 scans a tag
   - trigger: state
     entity_id: binary_sensor.playbee_tagreader_card_present
     from: 'on'
     to: 'off'
-    id: removed
-    note: Trigger when the reader reports that the card was removed
+    for:
+      seconds: 1
+    id: removed_v1
+    note: Trigger only when reader v1 stays off for x seconds
   - trigger: state
-    entity_id: binary_sensor.playbee_tagreader_v2_card_present
-    from: 'on'
-    to: 'off'
-    id: removed
-    note: Trigger when the reader reports that the card was removed
+    entity_id:
+    - binary_sensor.playbee_tagreader_v2_card_present
+    to:
+    - 'off'
+    for:
+      seconds: 1
+    id: removed_v2
+    note: Trigger only when reader v2 stays off for x seconds
   conditions: []
   actions:
   - variables:
       active_tag_uid: '{{ states(''input_text.playbee_active_tag_uid'') }}'
       has_active_tag: '{{ active_tag_uid not in ['''', ''unknown'', ''unavailable'']
         }}'
-      scanned_tag_uid: "{% if trigger.id == 'scanned'\n      and trigger.event is
-        defined\n      and trigger.event.data is defined\n      and trigger.event.data.tag_id
+      scanned_tag_uid: "{% if trigger.platform == 'event'\n      and trigger.event
+        is defined\n      and trigger.event.data is defined\n      and trigger.event.data.tag_id
         is defined %}\n  {{ trigger.event.data.tag_id }}\n{% else %}\n  {{ '' }}\n{%
         endif %}"
-      scanned_device_id: "{% if trigger.id == 'scanned'\n      and trigger.event is
-        defined\n      and trigger.event.data is defined\n      and trigger.event.data.device_id
-        is defined %}\n  {{ trigger.event.data.device_id }}\n{% else %}\n  {{ '' }}\n{%
-        endif %}"
-    note: Normalize trigger data and remember whether a PlayBee tag is already active
+    note: Normalize current active tag and scanned tag id
   - choose:
     - conditions:
       - condition: template
-        value_template: '{{ trigger.id == ''scanned'' }}'
-        note: Only handle scan events in this branch
-      - condition: template
-        value_template: "{{ scanned_device_id in [\n  '5027c31bfe14b567944562578ee195bd',\n
-          \ 'b9cdc2845d361b7c7ef05d864ad713a1'\n] }}"
-        note: Ignore scans from other readers
+        value_template: '{{ trigger.id in [''scanned_v1'', ''scanned_v2''] }}'
+        note: Only handle PlayBee scan events in this branch
       - condition: template
         value_template: '{{ not has_active_tag }}'
         note: Do not start new playback while a tag is active (same or different)
@@ -907,8 +912,8 @@
         note: Start or resume playback for the scanned tag
     - conditions:
       - condition: template
-        value_template: '{{ trigger.id == ''removed'' }}'
-        note: Only handle card removal in this branch
+        value_template: '{{ trigger.id in [''removed_v1'', ''removed_v2''] }}'
+        note: Only handle confirmed removal in this branch
       - condition: template
         value_template: '{{ has_active_tag }}'
         note: Only stop when a PlayBee tag is currently active
@@ -916,7 +921,7 @@
       - action: script.playbee_stop_media
         data:
           reason: card_removed
-        note: Save resume state and stop playback after the card is removed
+        note: Save resume state and stop playback after confirmed removal
   mode: queued
   max: 20
 - id: '1781201586519'

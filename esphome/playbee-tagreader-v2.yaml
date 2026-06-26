@@ -13,12 +13,14 @@ esp8266:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+  power_save_mode: none
   ap:
     ssid: ${name}
 
 captive_portal:
 
 logger:
+  level: INFO
 
 api:
   encryption:
@@ -32,27 +34,77 @@ spi:
   miso_pin: D6
   mosi_pin: D7
 
+globals:
+  - id: tag_locked
+    type: bool
+    restore_value: no
+    initial_value: "false"
+
+  - id: active_uid
+    type: std::string
+    restore_value: no
+    initial_value: '""'
+
 pn532_spi:
   cs_pin: D4
-  update_interval: 500ms
+  update_interval: 1000ms
+
   on_tag:
     then:
-      - text_sensor.template.publish:
-          id: current_tag_uid
-          state: !lambda 'return x;'
-      - binary_sensor.template.publish:
-          id: card_present
-          state: ON
-      - homeassistant.tag_scanned: !lambda 'return x;'
+      - if:
+          condition:
+            lambda: 'return !id(tag_locked);'
+          then:
+            - lambda: |-
+                id(tag_locked) = true;
+                id(active_uid) = x;
+            - text_sensor.template.publish:
+                id: current_tag_uid
+                state: !lambda 'return x;'
+            - text_sensor.template.publish:
+                id: accepted_tag_uid
+                state: !lambda 'return x;'
+            - binary_sensor.template.publish:
+                id: card_present
+                state: ON
+            - logger.log:
+                format: "Accepted tag %s"
+                args: ['x.c_str()']
+            - homeassistant.tag_scanned: !lambda 'return x;'
+
+      - if:
+          condition:
+            lambda: 'return id(tag_locked) && id(active_uid) != x;'
+          then:
+            - logger.log:
+                format: "Ignoring tag %s while active tag %s is locked"
+                args: ['x.c_str()', 'id(active_uid).c_str()']
 
   on_tag_removed:
     then:
-      - text_sensor.template.publish:
-          id: current_tag_uid
-          state: ""
-      - binary_sensor.template.publish:
-          id: card_present
-          state: OFF
+      - if:
+          condition:
+            lambda: 'return id(tag_locked);'
+          then:
+            - logger.log:
+                format: "Tag removed %s"
+                args: ['id(active_uid).c_str()']
+            - homeassistant.event:
+                event: esphome.playbee_tag_removed
+                data:
+                  uid: !lambda 'return id(active_uid);'
+            - lambda: |-
+                id(tag_locked) = false;
+                id(active_uid).clear();
+            - text_sensor.template.publish:
+                id: current_tag_uid
+                state: ""
+            - text_sensor.template.publish:
+                id: accepted_tag_uid
+                state: ""
+            - binary_sensor.template.publish:
+                id: card_present
+                state: OFF
 
 button:
   - platform: restart
@@ -76,6 +128,12 @@ text_sensor:
     id: current_tag_uid
     update_interval: never
     icon: mdi:nfc
+
+  - platform: template
+    name: "Accepted Tag UID"
+    id: accepted_tag_uid
+    update_interval: never
+    icon: mdi:tag
 
   - platform: version
     hide_timestamp: true
