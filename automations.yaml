@@ -1106,17 +1106,21 @@
   alias: PlayBee | Enforce max volume
   description: ''
   triggers:
-  - entity_id: media_player.googlehome2758
-    attribute: volume_level
-    above: input_number.playbee_speaker_max_volume
-    trigger: numeric_state
+  - trigger: media_player.volume_crossed_threshold
+    target:
+      entity_id: media_player.googlehome2758
+    options:
+      threshold:
+        type: above
+        value:
+          entity: input_number.playbee_speaker_max_volume
   actions:
-  - target:
+  - action: media_player.volume_set
+    target:
       entity_id: media_player.googlehome2758
     data:
-      volume_level: '{{ states(''input_number.playbee_speaker_max_volume'') | float(0.10)
-        }}'
-    action: media_player.volume_set
+      volume_level: '{{ states(''input_number.playbee_speaker_max_volume'') | float(10)
+        / 100 }}'
   mode: queued
   max: 10
 - id: '1782073767033'
