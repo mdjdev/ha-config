@@ -20,418 +20,378 @@ playbee_play_media_based_on_nfc_tag:
       description: The scanned NFC tag UID
       required: true
   sequence:
-  - action: shell_command.playbee_db_get_tag_by_id
+  - alias: Load tag from PlayBee DB
+    action: shell_command.playbee_db_get_tag_by_id
     data:
       tag_uid: '{{ tag_uid }}'
-    response_variable: db_response
-    note: Look up the scanned tag in the PlayBee database
-  - variables:
-      tag: "{% if db_response.returncode == 0 and db_response.stdout | trim != ''
-        %}\n  {{ db_response.stdout | from_json }}\n{% else %}\n  {{ {'found': false}
-        }}\n{% endif %}"
-      found: '{{ tag.found | default(false) }}'
-      media_url: '{{ tag.media_url | default('''') }}'
-      name: '{{ tag.name | default('''') }}'
-      shuffle_mode: '{% set value = tag.shuffle_mode | default(''off'') | string |
-        lower | trim %} {{ ''on'' if value in [''on'', ''true'', ''1'', ''yes''] else
-        ''off'' }}'
-      repeat_mode: "{% set value = tag.repeat_mode | default('off') | string | lower
-        | trim %} {% if value in ['one', 'track', 'single', '1'] %}\n  one\n{% elif
-        value in ['all', 'playlist', 'queue', 'on', 'true', '2', 'yes'] %}\n  all\n{%
-        else %}\n  off\n{% endif %}"
-      resume_mode: "{% set value = tag.resume_mode | default('off') | string | lower
-        | trim %} {% if value in ['off', '', 'unknown', 'unavailable', 'none', 'false',
-        '0', 'no'] %}\n  off\n{% elif value.endswith('d') and (value[:-1] | int(-1))
-        >= 0 %}\n  {{ (value[:-1] | int(0)) ~ 'd' }}\n{% elif value.endswith('h')
-        and (value[:-1] | int(-1)) >= 0 %}\n  {{ (value[:-1] | int(0)) ~ 'h' }}\n{%
-        elif value | int(-1) >= 0 %}\n  {{ (value | int(0)) ~ 'h' }}\n{% else %}\n
-        \ off\n{% endif %}"
-      resume_data: '{{ tag.resume_data | default(none) }}'
-      track_id: '{{ resume_data.track_id if resume_data is mapping else none }}'
-      position: '{{ resume_data.position | int(0) if resume_data is mapping else 0
-        }}'
-      queue_id: '{{ resume_data.queue_id if resume_data is mapping else none }}'
-      resume_last_updated: '{{ resume_data.last_updated if resume_data is mapping
-        else none }}'
-      resume_ttl_seconds: "{% set mode = resume_mode | string | lower | trim %} {%
-        if mode == 'off' %}\n  0\n{% elif mode.endswith('d') and (mode[:-1] | int(-1))
-        >= 0 %}\n  {{ (mode[:-1] | int(0)) * 86400 }}\n{% elif mode.endswith('h')
-        and (mode[:-1] | int(-1)) >= 0 %}\n  {{ (mode[:-1] | int(0)) * 3600 }}\n{%
-        else %}\n  0\n{% endif %}"
-      resume_last_updated_ts: "{% if resume_last_updated not in [none, '', 'unknown',
-        'unavailable'] %}\n  {{ as_timestamp(resume_last_updated, 0) | int(0) }}\n{%
-        else %}\n  0\n{% endif %}"
-      resume_age_seconds: "{% if resume_last_updated_ts | int(0) > 0 %}\n  {{ (as_timestamp(now())
-        - (resume_last_updated_ts | int(0))) | int(0) }}\n{% else %}\n  -1\n{% endif
-        %}"
-      resume_has_data: "{{\n  resume_data is mapping\n  and track_id not in [none,
-        '', 'unknown', 'unavailable']\n  and queue_id not in [none, '', 'unknown',
-        'unavailable']\n}}"
-      resume_is_fresh: "{{\n  resume_ttl_seconds | int(0) > 0\n  and resume_age_seconds
-        | int(-1) >= 0\n  and resume_age_seconds | int(0) <= resume_ttl_seconds |
-        int(0)\n}}"
-      do_resume: '{{ resume_has_data and resume_is_fresh }}'
-      media_player: media_player.googlehome2758
-    note: Extract tag settings and decide whether a resume attempt is possible
-  - if:
+    response_variable: db_result
+  - alias: Normalize playback and resume context
+    variables:
+      player_id: media_player.googlehome2758
+      tag_row: "{% set raw = db_result.stdout | default('') | trim %} {% if db_result.returncode
+        == 0 and raw != '' %}\n  {{ raw | from_json }}\n{% else %}\n  {{ {'found':
+        false} }}\n{% endif %}"
+      tag_found: '{{ tag_row.found | default(false) }}'
+      playback_config: "{% from 'playbee.jinja' import normalize_on_off, normalize_repeat_mode
+        %} {{\n  {\n    'media_url': tag_row.media_url | default(''),\n    'name':
+        tag_row.name | default(''),\n    'shuffle': normalize_on_off(tag_row.shuffle_mode)
+        | string | trim,\n    'repeat': normalize_repeat_mode(tag_row.repeat_mode)
+        | string | trim\n  }\n}}"
+      resume_context: "{% from 'playbee.jinja' import normalize_resume_mode %} {%
+        from 'playbee_fn.jinja' import fn_ttl_seconds_from_resume_mode, fn_resume_payload_is_valid
+        %} {% set ttl_seconds_from_resume_mode = fn_ttl_seconds_from_resume_mode |
+        as_function %} {% set resume_payload_is_valid = fn_resume_payload_is_valid
+        | as_function %} {% set normalized_mode = normalize_resume_mode(tag_row.resume_mode)
+        | string | trim %} {% set payload = tag_row.resume_data | default(none) %}
+        {% set last_updated_ts =\n  as_timestamp(payload.last_updated, 0) | int(0)\n
+        \ if payload is mapping and payload.last_updated not in [none, '', 'unknown',
+        'unavailable']\n  else 0\n%} {% set ttl_seconds = ttl_seconds_from_resume_mode(normalized_mode)
+        | int(0) %} {% set age_seconds =\n  (as_timestamp(now()) - last_updated_ts)
+        | int(0)\n  if last_updated_ts > 0\n  else -1\n%} {{\n  {\n    'mode': normalized_mode,\n
+        \   'payload': payload,\n    'track_id': payload.track_id if payload is mapping
+        else none,\n    'queue_id': payload.queue_id if payload is mapping else none,\n
+        \   'position': payload.position | int(0) if payload is mapping else 0,\n
+        \   'last_updated_ts': last_updated_ts,\n    'ttl_seconds': ttl_seconds,\n
+        \   'age_seconds': age_seconds,\n    'has_data': resume_payload_is_valid(payload),\n
+        \   'is_fresh': ttl_seconds > 0 and age_seconds >= 0 and age_seconds <= ttl_seconds\n
+        \ }\n}}"
+      tag_is_valid: "{% from 'playbee_fn.jinja' import fn_is_known_value %} {% set
+        is_known_value = fn_is_known_value | as_function %} {{\n  tag_found and is_known_value(playback_config.media_url)\n}}"
+      resume_should_run: "{{\n  resume_context.has_data and resume_context.is_fresh\n}}"
+  - alias: Stop when tag is unknown or incomplete
+    if:
     - condition: template
-      value_template: '{{ not found or media_url in ['''', ''unknown'', ''unavailable'']
-        }}'
-      note: Stop early if the tag is unknown or has no usable media URL
+      value_template: '{{ not tag_is_valid }}'
     then:
     - action: system_log.write
       data:
         level: warning
         logger: playbee.nfc
         message: Unknown or incomplete NFC tag in DB. tag_uid={{ tag_uid }}, found={{
-          found }}, media_url={{ media_url }}
-      note: Log invalid tag data for later troubleshooting
+          tag_found }}, media_url={{ playback_config.media_url }}
     - stop: Unknown NFC tag
-  - action: input_text.set_value
+  - alias: Mark active tag
+    action: input_text.set_value
     target:
       entity_id: input_text.playbee_active_tag_uid
     data:
       value: '{{ tag_uid }}'
-    note: Mark this tag as the currently active PlayBee tag
-  - action: media_player.clear_playlist
-    target:
-      entity_id: '{{ media_player }}'
-    note: Clear the player queue before rebuilding it for fresh playback or indexed
-      resume
-  - action: media_player.shuffle_set
-    target:
-      entity_id: '{{ media_player }}'
-    data:
-      shuffle: '{{ shuffle_mode == ''on'' }}'
-    note: Set shuffle before playback has started
-  - action: media_player.repeat_set
-    target:
-      entity_id: '{{ media_player }}'
-    data:
-      repeat: '{{ repeat_mode }}'
-    note: Set repeat before playback has started
-  - action: system_log.write
+  - alias: Prepare player
+    sequence:
+    - alias: Clear queue
+      action: media_player.clear_playlist
+      target:
+        entity_id: '{{ player_id }}'
+    - alias: Apply shuffle
+      action: media_player.shuffle_set
+      target:
+        entity_id: '{{ player_id }}'
+      data:
+        shuffle: '{{ playback_config.shuffle == ''on'' }}'
+    - alias: Apply repeat
+      action: media_player.repeat_set
+      target:
+        entity_id: '{{ player_id }}'
+      data:
+        repeat: '{{ playback_config.repeat }}'
+  - alias: Log playback request
+    action: system_log.write
     data:
       level: info
       logger: playbee.nfc
-      message: 'PlayBee start playback: tag={{ tag_uid }}, media={{ media_url }},
-        queue_id={{ queue_id }}, shuffle_mode={{ shuffle_mode }}, repeat_mode={{ repeat_mode
-        }}, resume_mode={{ resume_mode }}, resume_has_data={{ resume_has_data }},
-        resume_is_fresh={{ resume_is_fresh }}'
-    note: Record playback input
-  - action: music_assistant.play_media
+      message: 'PlayBee start playback: tag={{ tag_uid }}, media={{ playback_config.media_url
+        }}, queue_id={{ resume_context.queue_id }}, shuffle={{ playback_config.shuffle
+        }}, repeat={{ playback_config.repeat }}, resume_mode={{ resume_context.mode
+        }}, resume_has_data={{ resume_context.has_data }}, resume_is_fresh={{ resume_context.is_fresh
+        }}'
+  - alias: Start playback
+    action: music_assistant.play_media
     target:
-      entity_id: '{{ media_player }}'
+      entity_id: '{{ player_id }}'
     data:
-      media_id: '{{ media_url }}'
+      media_id: '{{ playback_config.media_url }}'
       media_type: playlist
       enqueue: replace
-    note: Start playlist playback through the Music Assistant action so the full queue
-      is built reliably in all cases
-  - if:
+  - alias: Resume playback when possible
+    if:
     - condition: template
-      value_template: '{{ do_resume }}'
-      note: Resume only when stored queue and track data are present and TTL is still
-        valid
+      value_template: '{{ resume_should_run }}'
     then:
-    - action: system_log.write
+    - alias: Log resume request
+      action: system_log.write
       data:
         level: info
         logger: playbee.nfc
-        message: 'PlayBee resuming track:  track={{ track_id }}, position={{ position
-          }}'
-      note: Log resume input
-    - action: media_player.volume_mute
+        message: 'PlayBee resume request: track={{ resume_context.track_id }}, position={{
+          resume_context.position }}'
+    - alias: Mute player before queue jump
+      action: media_player.volume_mute
       target:
-        entity_id: '{{ media_player }}'
+        entity_id: '{{ player_id }}'
       data:
         is_volume_muted: true
-      note: Temporarily mute the player so the queue jump does not create an audible
-        track change
-    - action: shell_command.playbee_queue_find_item_for_track
+    - alias: Find queue item for saved track
+      action: shell_command.playbee_queue_find_item_for_track
       data:
-        queue_id: '{{ queue_id }}'
-        track_id: '{{ track_id }}'
-      response_variable: queue_match_response
-      note: Query Music Assistant from the helper script and return only the matched
-        queue item id and index
-    - if:
+        queue_id: '{{ resume_context.queue_id }}'
+        track_id: '{{ resume_context.track_id }}'
+      response_variable: queue_lookup_result
+    - alias: Stop when queue helper fails
+      if:
       - condition: template
-        value_template: '{{ queue_match_response.returncode != 0 }}'
-        note: Abort when the helper script fails to query or parse Music Assistant
-          queue items
+        value_template: '{{ queue_lookup_result.returncode != 0 }}'
       then:
       - action: system_log.write
         data:
           level: error
           logger: playbee.nfc
-          message: PlayBee queue match helper failed. returncode={{ queue_match_response.returncode
-            }}, stdout={{ queue_match_response.stdout }}, stderr={{ queue_match_response.stderr
+          message: PlayBee queue lookup failed. returncode={{ queue_lookup_result.returncode
+            }}, stdout={{ queue_lookup_result.stdout }}, stderr={{ queue_lookup_result.stderr
             }}
-        note: Preserve stdout and stderr from the queue lookup helper for troubleshooting
       - action: media_player.volume_mute
         target:
-          entity_id: '{{ media_player }}'
+          entity_id: '{{ player_id }}'
         data:
           is_volume_muted: false
-        note: Unmute before stopping
-      - stop: Queue match helper failed
-    - variables:
-        queue_match: "{% set raw = queue_match_response.stdout | trim %} {% if queue_match_response.returncode
-          == 0 and raw.startswith('{') %}\n  {{ raw | from_json }}\n{% else %}\n  {{
-          {} }}\n{% endif %}"
-        matched_queue_item_id: '{{ queue_match.get(''queue_item_id'', '''') }}'
-        matched_index: '{{ queue_match.get(''index'', -1) }}'
-        matched_found: '{{ queue_match.get(''found'', false) }}'
-      note: Parse the compact queue lookup result returned by the helper script
-    - if:
+      - stop: Queue lookup failed
+    - alias: Parse queue lookup result
+      variables:
+        queue_match: "{% set raw = queue_lookup_result.stdout | default('') | trim
+          %} {% if queue_lookup_result.returncode == 0 and raw.startswith('{') %}\n
+          \ {{ raw | from_json }}\n{% else %}\n  {{ {} }}\n{% endif %}"
+        queue_item_found: '{{ queue_match.get(''found'', false) }}'
+        queue_item_id: '{{ queue_match.get(''queue_item_id'', '''') }}'
+    - alias: Resume at matched queue item
+      if:
       - condition: template
-        value_template: '{{ matched_found and matched_queue_item_id not in ['''',
-          none] }}'
-        note: Continue only when the helper found the stored track in the rebuilt
-          queue
+        value_template: '{{ queue_item_found and queue_item_id not in ['''', none]
+          }}'
       then:
       - action: rest_command.playbee_ma_resume
         data:
-          queue_id: '{{ queue_id }}'
-          item_id: '{{ matched_queue_item_id }}'
-          seek_position: '{{ position }}'
-        response_variable: resume_response
-        note: Jump directly to the matched queue item id and send the seek position
-          in the same Music Assistant API call
-      - if:
+          queue_id: '{{ resume_context.queue_id }}'
+          item_id: '{{ queue_item_id }}'
+          seek_position: '{{ resume_context.position }}'
+        response_variable: resume_api_result
+      - alias: Stop when Music Assistant resume fails
+        if:
         - condition: template
-          value_template: '{{ resume_response is not mapping or resume_response.status
+          value_template: '{{ resume_api_result is not mapping or resume_api_result.status
             != 200 }}'
-          note: Abort when Music Assistant rejects the play-index request for the
-            matched queue item id
         then:
         - action: system_log.write
           data:
             level: error
             logger: playbee.nfc
-            message: PlayBee resume failed. queue_item_id={{ matched_queue_item_id
-              }}, index={{ matched_index }}, response={{ resume_response }}
-          note: Preserve the play-index failure together with the matched queue identifiers
+            message: PlayBee resume failed. queue_item_id={{ queue_item_id }}, response={{
+              resume_api_result }}
         - action: media_player.volume_mute
           target:
-            entity_id: '{{ media_player }}'
+            entity_id: '{{ player_id }}'
           data:
             is_volume_muted: false
-          note: Unmute before stopping
-        - stop: Play index failed
+        - stop: Resume request failed
       else:
       - action: system_log.write
         data:
           level: warning
           logger: playbee.nfc
           message: Resume track not found in queue. tag={{ tag_uid }}, queue_id={{
-            queue_id }}, track_id={{ track_id }}, helper_result={{ queue_match_response.stdout
-            }}
-        note: Log helper output when the stored track cannot be found in the rebuilt
-          queue
+            resume_context.queue_id }}, track_id={{ resume_context.track_id }}, helper_result={{
+            queue_lookup_result.stdout }}
       - action: media_player.volume_mute
         target:
-          entity_id: '{{ media_player }}'
+          entity_id: '{{ player_id }}'
         data:
           is_volume_muted: false
-        note: Unmute before stopping
       - stop: Resume track not found
-    - action: media_player.volume_mute
+    - alias: Unmute after resume handling
+      action: media_player.volume_mute
       target:
-        entity_id: '{{ media_player }}'
+        entity_id: '{{ player_id }}'
       data:
         is_volume_muted: false
-      note: Unmute the player after the playback target has been selected
   description: ''
 playbee_stop_media:
   alias: PlayBee | Stop media
   mode: single
   fields:
     reason:
+      description: Optional stop reason for resume logging
       required: false
   sequence:
-  - variables:
-      media_player: media_player.googlehome2758
+  - alias: Build stop context
+    variables:
+      player_id: media_player.googlehome2758
+      stop_reason: '{{ reason | default(''stop'') }}'
       active_tag_uid: '{{ states(''input_text.playbee_active_tag_uid'') }}'
-      has_active_tag: '{{ active_tag_uid not in ['''', ''unknown'', ''unavailable'']
-        }}'
-    note: Gather current player and active tag state before stopping
-  - action: script.playbee_save_resume
+      active_tag_present: "{{\n  active_tag_uid not in ['', 'unknown', 'unavailable']\n}}"
+  - alias: Save resume state
+    action: script.playbee_save_resume
     data:
-      reason: '{{ reason | default(''stop'') }}'
-    note: Save queue position before stopping playback
-  - action: media_player.media_stop
+      reason: '{{ stop_reason }}'
+  - alias: Stop playback
+    action: media_player.media_stop
     target:
-      entity_id: '{{ media_player }}'
-    note: Stop playback on the PlayBee target player
-  - delay: 00:00:01
-    note: Short delay so the stop command settles before clearing the queue
-  - action: media_player.clear_playlist
+      entity_id: '{{ player_id }}'
+  - alias: Wait for stop to settle
+    delay: 00:00:01
+  - alias: Clear remaining queue
+    action: media_player.clear_playlist
     target:
-      entity_id: '{{ media_player }}'
-    note: Remove remaining queue items after stopping
-  - if:
+      entity_id: '{{ player_id }}'
+  - alias: Clear active tag marker when present
+    if:
     - condition: template
-      value_template: '{{ has_active_tag }}'
-      note: Only clear the helper when a tag is currently marked as active
+      value_template: '{{ active_tag_present }}'
     then:
     - action: input_text.set_value
       target:
         entity_id: input_text.playbee_active_tag_uid
       data:
         value: ''
-      note: Reset the active tag helper after playback ends
+  description: ''
 playbee_save_resume:
   alias: PlayBee | Save resume
   mode: single
   fields:
     reason:
+      description: Optional trigger reason for logging
       required: false
   sequence:
-  - variables:
-      media_player: media_player.googlehome2758
+  - alias: Build playback context
+    variables:
+      player_id: media_player.googlehome2758
+      trigger_reason: '{{ reason | default(''unknown'') }}'
       active_tag_uid: '{{ states(''input_text.playbee_active_tag_uid'') }}'
       dev_tag_uids:
       - 04-3D-AA-EA-40-59-80
-      queue_id: "{{\n  state_attr(media_player, 'active_queue')\n  or state_attr(media_player,
-        'mass_queue_id')\n  or media_player\n}}"
-    note: Determine the active Music Assistant queue id for the target player
-  - action: rest_command.playbee_ma_get_queue
+      playback_context: "{{\n  {\n    'is_dev_card': active_tag_uid in dev_tag_uids,\n
+        \   'queue_id':\n      state_attr(player_id, 'active_queue')\n      or state_attr(player_id,
+        'mass_queue_id')\n      or player_id\n  }\n}}"
+  - alias: Load active queue from Music Assistant
+    action: rest_command.playbee_ma_get_queue
     data:
-      queue_id: '{{ queue_id }}'
-    response_variable: queue_response
-    note: Fetch queue state from Music Assistant to inspect current playback
-  - if:
+      queue_id: '{{ playback_context.queue_id }}'
+    response_variable: queue_result
+  - alias: Continue only when queue lookup succeeded
+    if:
     - condition: template
-      value_template: '{{ queue_response is mapping and queue_response.status == 200
-        }}'
-      note: Continue only when queue inspection succeeded
+      value_template: '{{ queue_result is mapping and queue_result.status == 200 }}'
     then:
-    - variables:
-        is_dev_card: '{{ active_tag_uid in dev_tag_uids }}'
-        queue_payload: "{% set content = queue_response.content if queue_response
-          is mapping else none %} {% if content is mapping %}\n  {{ content }}\n{%
-          elif content is string %}\n  {{ content | from_json({}, default={}) }}\n{%
-          else %}\n  {{ {} }}\n{% endif %}"
-        queue_payload_safe: '{{ queue_payload if queue_payload is mapping else {}
-          }}'
-        current_item: '{% set item = queue_payload_safe.get(''current_item'') %} {{
-          item if item is mapping else {} }}'
-        media_item: '{% set item = current_item.get(''media_item'') %} {{ item if
-          item is mapping else {} }}'
-        streamdetails: '{% set item = current_item.get(''streamdetails'') %} {{ item
-          if item is mapping else {} }}'
-        queue_extra_attributes: '{% set attrs = queue_payload_safe.get(''extra_attributes'')
-          %} {{ attrs if attrs is mapping else {} }}'
-        active_playlist_name: '{{ queue_extra_attributes.get(''active_playlist'',
-          '''') }}'
-        is_playbee_playlist: '{{ active_playlist_name.startswith(''PlayBee - '') }}'
-        db_tag_name: "{% set playlist = active_playlist_name %} {% if is_dev_card
-          and playlist.startswith('PlayBee - ') %}\n  {{ playlist | replace('PlayBee
-          - ', 'Dev - ', 1) }}\n{% else %}\n  {{ playlist }}\n{% endif %}"
-        resume_provider: '{{ streamdetails.get(''provider'') | default('''', true)
-          }}'
-        resume_item_id: '{{ streamdetails.get(''item_id'') | default('''', true) }}'
-        resume_url: "{% if resume_provider and resume_item_id %}\n  {{ resume_provider
-          }}://track/{{ resume_item_id }}\n{% else %}\n  {{ '' }}\n{% endif %}"
-        resume_position: '{{ queue_payload_safe.get(''elapsed_time'', 0) | int(0)
-          }}'
-        resume_queue_id: '{{ queue_payload_safe.get(''queue_id'', '''') }}'
-      note: Extract playlist identity, current track, and elapsed position from queue
-        data
-    - if:
+    - alias: Derive resume candidate from queue payload
+      variables:
+        queue_payload: "{% set content = queue_result.content if queue_result is mapping
+          else none %} {% if content is mapping %}\n  {{ content }}\n{% elif content
+          is string %}\n  {{ content | from_json({}, default={}) }}\n{% else %}\n
+          \ {{ {} }}\n{% endif %}"
+        resume_candidate: "{% set payload = queue_payload if queue_payload is mapping
+          else {} %} {% set current_item = payload.get('current_item') if payload.get('current_item')
+          is mapping else {} %} {% set streamdetails = current_item.get('streamdetails')
+          if current_item.get('streamdetails') is mapping else {} %} {% set extra_attributes
+          = payload.get('extra_attributes') if payload.get('extra_attributes') is
+          mapping else {} %} {% set active_playlist_name = extra_attributes.get('active_playlist',
+          '') %} {% set is_playbee_playlist = active_playlist_name.startswith('PlayBee
+          - ') %} {% set db_tag_name =\n  active_playlist_name | replace('PlayBee
+          - ', 'Dev - ', 1)\n  if playback_context.is_dev_card and active_playlist_name.startswith('PlayBee
+          - ')\n  else active_playlist_name\n%} {% set provider = streamdetails.get('provider')
+          | default('', true) %} {% set item_id = streamdetails.get('item_id') | default('',
+          true) %} {% set resume_url =\n  provider ~ '://track/' ~ item_id\n  if provider
+          and item_id\n  else ''\n%} {{\n  {\n    'active_playlist_name': active_playlist_name,\n
+          \   'is_playbee_playlist': is_playbee_playlist,\n    'db_tag_name': db_tag_name,\n
+          \   'queue_id': payload.get('queue_id', ''),\n    'position': payload.get('elapsed_time',
+          0) | int(0),\n    'track_url': resume_url\n  }\n}}"
+        resume_candidate_is_valid: "{{\n  resume_candidate.is_playbee_playlist\n  and
+          resume_candidate.db_tag_name not in ['', 'unknown', 'unavailable']\n  and
+          resume_candidate.track_url | length > 0\n}}"
+    - alias: Save resume only for managed PlayBee playback
+      if:
       - condition: template
-        value_template: "{{\n  is_playbee_playlist\n  and db_tag_name not in ['',
-          'unknown', 'unavailable']\n  and resume_url | length > 0\n}}"
-        note: Save resume only for PlayBee-managed playlists with a usable track id
+        value_template: '{{ resume_candidate_is_valid }}'
       then:
-      - action: shell_command.playbee_db_get_tag_by_name
+      - alias: Resolve playlist name to tag entry
+        action: shell_command.playbee_db_get_tag_by_name
         data:
-          tag_name: '{{ db_tag_name }}'
-        response_variable: db_response
-        note: Resolve the effective playlist name back to its NFC tag entry
-      - variables:
-          db_tag: "{% if db_response.returncode == 0 and db_response.stdout | trim
-            != '' %}\n  {{ db_response.stdout | from_json }}\n{% else %}\n  {{ {'found':
-            false} }}\n{% endif %}"
-          db_tag_found: '{{ db_tag.found | default(false) }}'
-          db_tag_uid: '{{ db_tag.tag_uid | default('''') }}'
-          db_tag_name_from_db: '{{ db_tag.name | default('''') }}'
-        note: Parse the database lookup result for the active playlist name
-      - if:
+          tag_name: '{{ resume_candidate.db_tag_name }}'
+        response_variable: db_result
+      - alias: Build tag lookup context
+        variables:
+          tag_lookup: "{% set raw = db_result.stdout | default('') | trim %} {% if
+            db_result.returncode == 0 and raw != '' %}\n  {{ raw | from_json }}\n{%
+            else %}\n  {{ {'found': false} }}\n{% endif %}"
+          save_request: "{{\n  {\n    'tag_found': tag_lookup.found | default(false),\n
+            \   'tag_uid': tag_lookup.tag_uid | default(''),\n    'tag_name': tag_lookup.name
+            | default(''),\n    'queue_id': resume_candidate.queue_id,\n    'track_url':
+            resume_candidate.track_url,\n    'position': resume_candidate.position\n
+            \ }\n}}"
+          save_request_is_valid: "{{\n  save_request.tag_found\n  and save_request.tag_uid
+            not in ['', 'unknown', 'unavailable']\n  and save_request.queue_id not
+            in ['', 'unknown', 'unavailable']\n  and save_request.track_url not in
+            ['', 'unknown', 'unavailable']\n}}"
+      - alias: Persist resume data
+        if:
         - condition: template
-          value_template: "{{\n  db_tag_found\n  and db_tag_uid not in ['', 'unknown',
-            'unavailable']\n  and resume_queue_id not in ['', 'unknown', 'unavailable']\n
-            \ and resume_url not in ['', 'unknown', 'unavailable']\n}}"
-          note: Only write resume data when tag, queue, and track identifiers are
-            valid
+          value_template: '{{ save_request_is_valid }}'
         then:
         - action: shell_command.playbee_db_save_resume
           data:
-            tag_uid: '{{ db_tag_uid }}'
-            track_id: '{{ resume_url }}'
-            position: '{{ resume_position }}'
-            queue_id: '{{ resume_queue_id }}'
-          note: Persist resume data for later playback continuation
+            tag_uid: '{{ save_request.tag_uid }}'
+            track_id: '{{ save_request.track_url }}'
+            position: '{{ save_request.position }}'
+            queue_id: '{{ save_request.queue_id }}'
         else:
         - action: system_log.write
           data:
             level: debug
             logger: playbee.nfc
             message: 'PlayBee save_resume: skipping save after DB lookup. reason={{
-              reason | default(''unknown'') }}, active_tag_uid={{ active_tag_uid }},
-              is_dev_card={{ is_dev_card }}, active_playlist_name={{ active_playlist_name
-              }}, db_tag_name={{ db_tag_name }}, db_tag_found={{ db_tag_found }},
-              db_tag_uid={{ db_tag_uid }}, db_tag_name_from_db={{ db_tag_name_from_db
-              }}, resume_queue_id={{ resume_queue_id }}, resume_url={{ resume_url
-              }}'
-          note: Log why resume data was not written after tag lookup
+              trigger_reason }}, active_tag_uid={{ active_tag_uid }}, is_dev_card={{
+              playback_context.is_dev_card }}, active_playlist_name={{ resume_candidate.active_playlist_name
+              }}, db_tag_name={{ resume_candidate.db_tag_name }}, db_tag_found={{
+              save_request.tag_found }}, db_tag_uid={{ save_request.tag_uid }}, db_tag_name_from_db={{
+              save_request.tag_name }}, resume_queue_id={{ save_request.queue_id }},
+              resume_url={{ save_request.track_url }}'
       else:
       - action: system_log.write
         data:
           level: debug
           logger: playbee.nfc
           message: 'PlayBee save_resume: current queue is not a managed PlayBee playlist.
-            reason={{ reason | default(''unknown'') }}, active_tag_uid={{ active_tag_uid
-            }}, is_dev_card={{ is_dev_card }}, active_playlist_name={{ active_playlist_name
-            }}, db_tag_name={{ db_tag_name }}'
-        note: Ignore playback that was not started by a PlayBee playlist
+            reason={{ trigger_reason }}, active_tag_uid={{ active_tag_uid }}, is_dev_card={{
+            playback_context.is_dev_card }}, active_playlist_name={{ resume_candidate.active_playlist_name
+            }}, db_tag_name={{ resume_candidate.db_tag_name }}'
     else:
     - action: system_log.write
       data:
         level: warning
         logger: playbee.nfc
-        message: 'PlayBee save_resume: queue lookup failed with status={{ queue_response.status
-          if queue_response is mapping else ''unknown'' }}. reason={{ reason | default(''unknown'')
-          }}, active_tag_uid={{ active_tag_uid }}, queue_response={{ queue_response
+        message: 'PlayBee save_resume: queue lookup failed with status={{ queue_result.status
+          if queue_result is mapping else ''unknown'' }}. reason={{ trigger_reason
+          }}, active_tag_uid={{ active_tag_uid }}, queue_response={{ queue_result
           }}'
-      note: Log failed queue lookups because resume data cannot be updated
+  description: ''
 playbee_volume_change:
   alias: PlayBee | Change volume
   mode: single
   fields:
     delta:
+      description: Relative volume change in the 0..1 range, e.g. 0.05 or -0.05
       required: true
   sequence:
-  - variables:
-      media_player: media_player.googlehome2758
-      current_volume: '{{ state_attr(media_player, ''volume_level'') | float(0.05)
-        }}'
-      min_volume: 0.05
-      max_volume: '{{ states(''input_number.playbee_speaker_max_volume'') | int(10)
-        / 100 }}'
-      target_volume_raw: '{{ current_volume + (delta | float(0)) }}'
-      target_volume_clamped: '{{ [[target_volume_raw, min_volume] | max, max_volume]
-        | min }}'
-      new_volume: '{{ (target_volume_clamped | float) | round(2) }}'
-    note: Clamp the requested volume into the safe PlayBee range
-  - action: media_player.volume_set
+  - alias: Derive bounded target volume
+    variables:
+      player_id: media_player.googlehome2758
+      volume_policy: "{{\n  {\n    'min': 0.05,\n    'max': (states('input_number.playbee_speaker_max_volume')
+        | int(10) / 100)\n  }\n}}"
+      current_volume: "{{\n  state_attr(player_id, 'volume_level') | float(volume_policy.min)\n}}"
+      target_volume: "{% set requested = current_volume + (delta | float(0)) %} {{\n
+        \ [[requested, volume_policy.min] | max, volume_policy.max] | min | round(2)\n}}"
+  - alias: Apply target volume
+    action: media_player.volume_set
     target:
-      entity_id: '{{ media_player }}'
+      entity_id: '{{ player_id }}'
     data:
-      volume_level: '{{ new_volume }}'
-    note: Apply the new bounded volume to the player
+      volume_level: '{{ target_volume }}'
   description: ''
 playbee_track_navigation:
   alias: PlayBee | Track navigation
@@ -439,7 +399,7 @@ playbee_track_navigation:
   fields:
     action_type:
       name: Action type
-      description: restart_current or previous_track
+      description: restart_current, previous_track, or next_track
       required: true
       selector:
         select:
@@ -448,36 +408,46 @@ playbee_track_navigation:
           - previous_track
           - next_track
   sequence:
-  - choose:
-    - conditions:
+  - alias: Build navigation context
+    variables:
+      player_id: media_player.googlehome2758
+      navigation_action: '{{ action_type | default('''', true) | string | trim }}'
+  - alias: Apply requested navigation
+    choose:
+    - alias: Restart current track
+      conditions:
       - condition: template
-        value_template: '{{ action_type == ''restart_current'' }}'
-        note: Restart the current track from the beginning
+        value_template: '{{ navigation_action == ''restart_current'' }}'
       sequence:
       - action: media_player.media_seek
         target:
-          entity_id: media_player.googlehome2758
+          entity_id: '{{ player_id }}'
         data:
           seek_position: 0
-        note: Seek to zero instead of changing queue position
-    - conditions:
+    - alias: Go to previous track
+      conditions:
       - condition: template
-        value_template: '{{ action_type == ''previous_track'' }}'
-        note: Move to the previous queue item
+        value_template: '{{ navigation_action == ''previous_track'' }}'
       sequence:
       - action: media_player.media_previous_track
         target:
-          entity_id: media_player.googlehome2758
-        note: Ask the player to go to the previous track
-    - conditions:
+          entity_id: '{{ player_id }}'
+    - alias: Go to next track
+      conditions:
       - condition: template
-        value_template: '{{ action_type == ''next_track'' }}'
-        note: Move to the next queue item
+        value_template: '{{ navigation_action == ''next_track'' }}'
       sequence:
       - action: media_player.media_next_track
         target:
-          entity_id: media_player.googlehome2758
-        note: Ask the player to go to the next track
+          entity_id: '{{ player_id }}'
+    default:
+    - alias: Log unsupported navigation action
+      action: system_log.write
+      data:
+        level: warning
+        logger: playbee.nfc
+        message: 'PlayBee track navigation: unsupported action_type={{ navigation_action
+          }}'
   description: ''
 playbee_make_announcement:
   alias: PlayBee | Make announcement

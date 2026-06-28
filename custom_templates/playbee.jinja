@@ -1,0 +1,30 @@
+{% macro normalize_on_off(value) -%}
+  {% set v = value | default('off') | string | lower | trim %}
+  {{ 'on' if v in ['on', 'true', '1', 'yes'] else 'off' }}
+{%- endmacro %}
+
+{% macro normalize_repeat_mode(value) -%}
+  {% set v = value | default('off') | string | lower | trim %}
+  {% if v in ['one', 'track', 'single', '1'] %}
+    one
+  {% elif v in ['all', 'playlist', 'queue', 'on', 'true', '2', 'yes'] %}
+    all
+  {% else %}
+    off
+  {% endif %}
+{%- endmacro %}
+
+{% macro normalize_resume_mode(value) -%}
+  {% set v = value | default('off') | string | lower | trim %}
+  {% if v in ['off', '', 'unknown', 'unavailable', 'none', 'false', '0', 'no'] %}
+    off
+  {% elif v.endswith('d') and (v[:-1] | int(-1)) >= 0 %}
+    {{ (v[:-1] | int(0)) ~ 'd' }}
+  {% elif v.endswith('h') and (v[:-1] | int(-1)) >= 0 %}
+    {{ (v[:-1] | int(0)) ~ 'h' }}
+  {% elif v | int(-1) >= 0 %}
+    {{ (v | int(0)) ~ 'h' }}
+  {% else %}
+    off
+  {% endif %}
+{%- endmacro %}

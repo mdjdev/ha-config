@@ -1,0 +1,22 @@
+{% macro fn_is_known_value(value, returns) -%}
+  {% do returns(value not in [none, '', 'unknown', 'unavailable']) %}
+{%- endmacro %}
+
+{% macro fn_ttl_seconds_from_resume_mode(value, returns) -%}
+  {% set mode = value | string | lower | trim %}
+  {% if mode.endswith('d') and (mode[:-1] | int(-1)) >= 0 %}
+    {% do returns((mode[:-1] | int(0)) * 86400) %}
+  {% elif mode.endswith('h') and (mode[:-1] | int(-1)) >= 0 %}
+    {% do returns((mode[:-1] | int(0)) * 3600) %}
+  {% else %}
+    {% do returns(0) %}
+  {% endif %}
+{%- endmacro %}
+
+{% macro fn_resume_payload_is_valid(payload, returns) -%}
+  {% do returns(
+    payload is mapping
+    and payload.track_id not in [none, '', 'unknown', 'unavailable']
+    and payload.queue_id not in [none, '', 'unknown', 'unavailable']
+  ) %}
+{%- endmacro %}
