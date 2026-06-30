@@ -6,53 +6,23 @@ esphome:
   name: ${name}
   friendly_name: ${friendly_name}
   name_add_mac_suffix: false
-  on_boot:
-    priority: -100
-    then:
-      - text_sensor.template.publish:
-          id: pn532_warning_log
-          state: ""
-      - wait_until:
-          api.connected:
-      - delay: 1s
-      - homeassistant.event:
-          event: esphome.playbee_tagreader_booted
-          data:
-            device: ${name}
-            friendly_name: ${friendly_name}
 
-esp8266:
-  board: d1_mini
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
 
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+  power_save_mode: none
+  reboot_timeout: 5min
   ap:
     ssid: ${name}
 
 captive_portal:
 
 logger:
-  level: DEBUG
-  on_message:
-    level: WARN
-    then:
-      - if:
-          condition:
-            lambda: |-
-              return strcmp(tag, "pn532") == 0 &&
-                     strstr(message, "Requesting tag read failed!") != nullptr;
-          then:
-            - text_sensor.template.publish:
-                id: pn532_warning_log
-                state: !lambda |-
-                  std::string clean;
-                  for (const char *p = message; *p != '\0'; ++p) {
-                    const unsigned char c = static_cast<unsigned char>(*p);
-                    if (c >= 32 && c <= 126) clean += static_cast<char>(c);
-                  }
-                  return std::string("[W][") + tag + "]: " + clean +
-                         " | boot_ms=" + to_string(millis());
 
 api:
   encryption:
@@ -61,115 +31,32 @@ api:
 ota:
   - platform: esphome
 
-i2c:
-  scan: false
-  frequency: 100kHz
-  timeout: 2ms
+spi:
+  clk_pin: GPIO18
+  miso_pin: GPIO19
+  mosi_pin: GPIO23
 
-globals:
-  - id: active_uid
-    type: std::string
-    restore_value: no
-    initial_value: '""'
-
-  - id: last_announced_uid
-    type: std::string
-    restore_value: no
-    initial_value: '""'
-
-  - id: tag_locked
-    type: bool
-    restore_value: no
-    initial_value: "false"
-
-  - id: tag_confirmed
-    type: bool
-    restore_value: no
-    initial_value: "false"
-
-script:
-  - id: confirm_scan
-    mode: restart
-    parameters:
-      uid: string
+pn532_spi:
+  cs_pin: GPIO5
+  update_interval: 500ms
+  on_tag:
     then:
-      - logger.log:
-          format: "Candidate tag %s detected, waiting 1000ms before confirming"
-          args: [ 'uid.c_str()' ]
-      - delay: 1000ms
-      - if:
-          condition:
-            lambda: |-
-              return id(tag_locked) &&
-                     id(active_uid) == uid &&
-                     !id(tag_confirmed);
-          then:
-            - lambda: |-
-                id(tag_confirmed) = true;
-                id(last_announced_uid) = uid;
-            - text_sensor.template.publish:
-                id: current_tag_uid
-                state: !lambda 'return uid;'
-            - binary_sensor.template.publish:
-                id: card_present
-                state: ON
-            - logger.log:
-                format: "Confirmed tag %s, sending tag_scanned"
-                args: [ 'uid.c_str()' ]
-            - homeassistant.tag_scanned: !lambda 'return uid;'
+      - text_sensor.template.publish:
+          id: current_tag_uid
+          state: !lambda 'return x;'
+      - binary_sensor.template.publish:
+          id: card_present
+          state: ON
+      - homeassistant.tag_scanned: !lambda 'return x;'
 
-  - id: confirm_removed
-    mode: restart
+  on_tag_removed:
     then:
-      - logger.log: "Raw tag removed, waiting to confirm removal"
-      - delay: 2500ms
-      - lambda: |-
-          ESP_LOGD("tagreader", "Removal confirmed, clearing active tag '%s'", id(active_uid).c_str());
-          id(active_uid).clear();
-          id(last_announced_uid).clear();
-          id(tag_locked) = false;
-          id(tag_confirmed) = false;
       - text_sensor.template.publish:
           id: current_tag_uid
           state: ""
       - binary_sensor.template.publish:
           id: card_present
           state: OFF
-
-pn532_i2c:
-  id: pn532_board
-  update_interval: 500ms
-
-  on_tag:
-    then:
-      - script.stop: confirm_removed
-      - if:
-          condition:
-            lambda: 'return !id(tag_locked);'
-          then:
-            - lambda: |-
-                id(active_uid) = x;
-                id(tag_locked) = true;
-                id(tag_confirmed) = false;
-                ESP_LOGD("tagreader", "Accepted candidate tag: %s", x.c_str());
-            - script.execute:
-                id: confirm_scan
-                uid: !lambda 'return x;'
-      - if:
-          condition:
-            lambda: 'return id(tag_locked) && id(active_uid) != x;'
-          then:
-            - logger.log:
-                format: "Ignoring tag %s while active tag %s is locked"
-                args: [ 'x.c_str()', 'id(active_uid).c_str()' ]
-
-  on_tag_removed:
-    then:
-      - if:
-          condition:
-            lambda: 'return id(tag_locked);'
-          then:
-            - script.execute: confirm_removed
 
 button:
   - platform: restart
@@ -193,13 +80,6 @@ text_sensor:
     id: current_tag_uid
     update_interval: never
     icon: mdi:nfc
-
-  - platform: template
-    name: "PN532 Warning Log"
-    id: pn532_warning_log
-    update_interval: never
-    entity_category: diagnostic
-    icon: mdi:alert
 
   - platform: version
     hide_timestamp: true
