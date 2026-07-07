@@ -70,12 +70,6 @@ playbee_play_media_based_on_nfc_tag:
         message: Unknown or incomplete NFC tag in DB. tag_uid={{ tag_uid }}, found={{
           tag_found }}, media_url={{ playback_config.media_url }}
     - stop: Unknown NFC tag
-  - alias: Mark active tag
-    action: input_text.set_value
-    target:
-      entity_id: input_text.playbee_active_tag_uid
-    data:
-      value: '{{ tag_uid }}'
   - alias: Prepare player
     sequence:
     - alias: Clear queue
@@ -104,6 +98,12 @@ playbee_play_media_based_on_nfc_tag:
         }}, repeat={{ playback_config.repeat }}, resume_mode={{ resume_context.mode
         }}, resume_has_data={{ resume_context.has_data }}, resume_is_fresh={{ resume_context.is_fresh
         }}'
+  - alias: Normalize mute
+    action: media_player.volume_mute
+    target:
+      entity_id: '{{ player_id }}'
+    data:
+      is_volume_muted: false
   - alias: Start playback
     action: music_assistant.play_media
     target:
@@ -112,6 +112,12 @@ playbee_play_media_based_on_nfc_tag:
       media_id: '{{ playback_config.media_url }}'
       media_type: playlist
       enqueue: replace
+  - alias: Mark active tag
+    action: input_text.set_value
+    target:
+      entity_id: input_text.playbee_active_tag_uid
+    data:
+      value: '{{ tag_uid }}'
   - alias: Resume playback when possible
     if:
     - condition: template
