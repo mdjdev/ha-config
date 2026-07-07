@@ -13,7 +13,7 @@
               "cards": [
                 {
                   "type": "media-control",
-                  "entity": "media_player.googlehome2758"
+                  "entity": "media_player.playbee_speaker"
                 }
               ]
             },

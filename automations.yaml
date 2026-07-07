@@ -929,7 +929,7 @@
   description: ''
   triggers:
   - trigger: state
-    entity_id: media_player.googlehome2758
+    entity_id: media_player.playbee_speaker
     to: paused
     note: Trigger when the PlayBee player is paused
   conditions: []
@@ -949,7 +949,7 @@
     note: Run every 30 seconds while something is playing
   conditions:
   - condition: state
-    entity_id: media_player.googlehome2758
+    entity_id: media_player.playbee_speaker
     state: playing
     note: Only save heartbeat resume data during active playback
   actions:
@@ -1080,7 +1080,7 @@
   triggers:
   - trigger: media_player.volume_crossed_threshold
     target:
-      entity_id: media_player.googlehome2758
+      entity_id: media_player.playbee_speaker
     options:
       threshold:
         type: above
@@ -1089,7 +1089,7 @@
   actions:
   - action: media_player.volume_set
     target:
-      entity_id: media_player.googlehome2758
+      entity_id: media_player.playbee_speaker
     data:
       volume_level: '{{ states(''input_number.playbee_speaker_max_volume'') | float(10)
         / 100 }}'

@@ -27,7 +27,7 @@ playbee_play_media_based_on_nfc_tag:
     response_variable: db_result
   - alias: Normalize playback and resume context
     variables:
-      player_id: media_player.googlehome2758
+      player_id: media_player.playbee_speaker
       tag_row: "{% set raw = db_result.stdout | default('') | trim %} {% if db_result.returncode
         == 0 and raw != '' %}\n  {{ raw | from_json }}\n{% else %}\n  {{ {'found':
         false} }}\n{% endif %}"
@@ -228,7 +228,7 @@ playbee_stop_media:
   sequence:
   - alias: Build stop context
     variables:
-      player_id: media_player.googlehome2758
+      player_id: media_player.playbee_speaker
       stop_reason: '{{ reason | default(''stop'') }}'
       active_tag_uid: '{{ states(''input_text.playbee_active_tag_uid'') }}'
       active_tag_present: "{{\n  active_tag_uid not in ['', 'unknown', 'unavailable']\n}}"
@@ -267,7 +267,7 @@ playbee_save_resume:
   sequence:
   - alias: Build playback context
     variables:
-      player_id: media_player.googlehome2758
+      player_id: media_player.playbee_speaker
       trigger_reason: '{{ reason | default(''unknown'') }}'
       active_tag_uid: '{{ states(''input_text.playbee_active_tag_uid'') }}'
       dev_tag_uids:
@@ -386,7 +386,7 @@ playbee_volume_change:
   sequence:
   - alias: Derive bounded target volume
     variables:
-      player_id: media_player.googlehome2758
+      player_id: media_player.playbee_speaker
       volume_policy: "{{\n  {\n    'min': 0.05,\n    'max': (states('input_number.playbee_speaker_max_volume')
         | int(10) / 100)\n  }\n}}"
       current_volume: "{{\n  state_attr(player_id, 'volume_level') | float(volume_policy.min)\n}}"
@@ -416,7 +416,7 @@ playbee_track_navigation:
   sequence:
   - alias: Build navigation context
     variables:
-      player_id: media_player.googlehome2758
+      player_id: media_player.playbee_speaker
       navigation_action: '{{ action_type | default('''', true) | string | trim }}'
   - alias: Apply requested navigation
     choose:
