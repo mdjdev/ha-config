@@ -449,22 +449,3 @@ playbee_track_navigation:
         message: 'PlayBee track navigation: unsupported action_type={{ navigation_action
           }}'
   description: ''
-playbee_make_announcement:
-  alias: PlayBee | Make announcement
-  mode: queued
-  fields:
-    message:
-      required: true
-  sequence:
-  - variables:
-      media_player: media_player.googlehome2758
-  - target:
-      entity_id: tts.piper
-    data:
-      media_player_entity_id: '{{ media_player }}'
-      message: '{{ message }}'
-    action: tts.speak
-  - wait_template: '{{ not is_state(media_player, ''playing'') }}'
-    timeout: 00:00:10
-    continue_on_timeout: true
-  - delay: 00:00:01

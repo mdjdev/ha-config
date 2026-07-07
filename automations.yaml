@@ -1074,39 +1074,6 @@
       action_type: next_track
     note: Send next track command to the shared navigation script
   mode: single
-- id: '1781556691438'
-  alias: PlayBee | TagReader reboot on failure
-  description: ''
-  triggers:
-  - trigger: state
-    entity_id:
-    - sensor.playbee_tagreader_pn532_warning_log
-    to:
-  conditions:
-  - condition: template
-    value_template: "{{\n  trigger.to_state is not none\n  and trigger.to_state.state
-      not in [none, '', 'unknown', 'unavailable']\n  and 'Requesting tag read failed!'
-      in (trigger.to_state.state | string)\n}}"
-  actions:
-  - action: system_log.write
-    data:
-      level: warning
-      logger: playbee.tagreader
-      message: 'PlayBee tag reader failure automation triggered: {{ trigger.to_state.state
-        }}'
-  - action: notify.mobile_app_obsidian
-    data:
-      title: PlayBee TagReader rebooting
-      message: PN532 Requesting tag read failed!
-  - action: script.playbee_make_announcement
-    data:
-      message: Rebooting
-    note: Play spoken message via media player
-  - action: button.press
-    target:
-      entity_id: button.playbee_tagreader_restart
-  - delay: 00:00:10
-  mode: single
 - id: '1781900740272'
   alias: PlayBee | Enforce max volume
   description: ''
@@ -1128,17 +1095,6 @@
         / 100 }}'
   mode: queued
   max: 10
-- id: '1782073767033'
-  alias: PlayBee | TagReader booted
-  description: ''
-  triggers:
-  - event_type: esphome.playbee_tagreader_booted
-    trigger: event
-  actions:
-  - action: script.playbee_make_announcement
-    data:
-      message: Booted
-    note: Play spoken message via media player
 - id: '1782331154638'
   alias: PlayBee | Database backup
   description: ''
