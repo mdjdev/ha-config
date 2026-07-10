@@ -68,9 +68,12 @@ recorder:
       - device_tracker.pixel_9_pro_obsidian
       - device_tracker.obsidian_mobile
       - device_tracker.pixel_9_pro_obsidian_ping
+      - binary_sensor.pixel_9_pro_obsidian_ping
+      
       - device_tracker.pixel_9_pro_hazel
       - device_tracker.hazel_mobile
       - device_tracker.pixel_9_pro_hazel_ping
+      - binary_sensor.pixel_9_pro_hazel_ping
 
     entity_globs:
       # Room and environment sensors used in dashboards.

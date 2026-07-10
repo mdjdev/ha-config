@@ -20,11 +20,11 @@
     trigger: state
   conditions: []
   actions:
-  - data:
+  - action: script.mobile_send_notification
+    data:
+      must_be_home: false
       message: clear_notification
-      data:
-        tag: '{{ trigger.entity_id }}'
-    action: notify.mobile_app_obsidian
+      tag: '{{ trigger.entity_id }}'
   mode: parallel
   max: 15
 - id: '1696011063742'
@@ -89,17 +89,15 @@
             %}\n  unknown\n{% endif %}"
       - condition: template
         value_template: '{{ device_name != ''unknown'' }}'
-      - data:
-          message: Eufy Robovac | Tägliche Reinigung wurde nicht abgeschlossen
-          data:
-            tag: vacuum.robovac.idle
-            ttl: 0
-            priority: high
-            notification_icon: mdi:robot-vacuum-off
-            actions:
-            - action: VACUUM_CONTINUE
-              title: Starten
-        action: notify.mobile_app_{{ device_name }}
+      - action: script.mobile_send_notification
+        data:
+          title: Eufy Robovac
+          message: Tägliche Reinigung wurde nicht abgeschlossen
+          tag: vacuum.robovac.idle
+          notification_icon: mdi:robot-vacuum-off
+          actions:
+          - action: VACUUM_CONTINUE
+            title: Starten
   mode: single
 - id: '1719428989327'
   alias: Eufy Robovac | Reinigung fortsetzen
@@ -254,9 +252,13 @@
   triggers:
   - minutes: /1
     trigger: time_pattern
-  - entity_id:
-    - device_tracker.pixel_9_pro_obsidian
-    to: home
+  - entity_id: binary_sensor.pixel_9_pro_obsidian_ping
+    to: 'on'
+    for:
+      minutes: 2
+    trigger: state
+  - entity_id: binary_sensor.pixel_9_pro_hazel_ping
+    to: 'on'
     for:
       minutes: 2
     trigger: state
@@ -265,54 +267,34 @@
     value_template: "{{ states.binary_sensor\n   | selectattr('entity_id', 'match',
       'binary_sensor.*(fenster|schiebetur)$')\n   | selectattr('state', 'eq', 'on')\n
       \  | list | length > 0 }}"
-  - condition: template
-    value_template: "{{ states.device_tracker\n   | selectattr('entity_id', 'match',
-      'device_tracker.*(pixel_9_pro_obsidian|huawei_p20_pro)$')\n   | selectattr('state',
-      'eq', 'home')\n   | list | length > 0 }}"
   actions:
   - repeat:
-      for_each: "{{ states.binary_sensor\n  | selectattr('entity_id', 'match', 'binary_sensor.*(fenster|schiebetur)$')\n
-        \ | selectattr('state', 'eq', 'on')\n  | map(attribute='entity_id')\n  | list
-        }}"
+      for_each: "{{ states.binary_sensor\n   | selectattr('entity_id', 'match', 'binary_sensor.*(fenster|schiebetur)$')\n
+        \  | selectattr('state', 'eq', 'on')\n   | map(attribute='entity_id')\n   |
+        list }}"
       sequence:
       - variables:
           sensor_id: '{{ repeat.item }}'
-          sensor_name: '{{ states[sensor_id].attributes.friendly_name | replace(''HmIP
+          sensor_name: '{{ state_attr(sensor_id, ''friendly_name'') | replace(''HmIP
             '', '''') }}'
-          open_minutes: '{{ ((as_timestamp(now()) - as_timestamp(states[sensor_id].last_changed))
-            // 60) | round(0, ''ceil'') }}'
-          delay: "{% if trigger.to_state is defined and trigger.to_state.state ==
-            'home' %}\n  0\n{% elif open_minutes <= 6 %}\n  {{ open_minutes % 2 }}\n{%
+          open_minutes: "{{ ((as_timestamp(now()) - as_timestamp(states[sensor_id].last_changed))
+            // 60)\n   | round(0, 'ceil') }}"
+          notification_delay: "{% if trigger.to_state is defined and trigger.to_state.state
+            == 'on' %}\n  0\n{% elif open_minutes <= 6 %}\n  {{ open_minutes % 2 }}\n{%
             elif open_minutes <= 30 %}\n  {{ open_minutes % 5 }}\n{% elif open_minutes
             <= 60 %}\n  {{ open_minutes % 10 }}\n{% elif open_minutes <= 120 %}\n
             \ {{ open_minutes % 15 }}\n{% elif open_minutes <= 180 %}\n  {{ open_minutes
-            % 30 }}\n{% else %}\n  {{ open_minutes % 60 }}\n{% endif %}\n"
+            % 30 }}\n{% else %}\n  {{ open_minutes % 60 }}\n{% endif %}"
       - condition: template
-        value_template: '{{ delay == 0 }}'
-      - repeat:
-          for_each: "{{ states.device_tracker\n  | selectattr('entity_id', 'match',
-            'device_tracker.*(pixel_9_pro_obsidian|huawei_p20_pro)$')\n  | selectattr('state',
-            'eq', 'home')\n  | map(attribute='entity_id')\n  | list }}"
-          sequence:
-          - variables:
-              device_id: '{{ repeat.item }}'
-              device_name: "{% if device_id.startswith('device_tracker.huawei_p20_pro')
-                %}\n  huawei_p20_pro\n{% elif device_id.startswith('device_tracker.pixel_9_pro_obsidian')
-                %}\n  obsidian\n{% endif %}"
-          - condition: template
-            value_template: '{{ device_name != '''' }}'
-          - data_template:
-              message: "{% if open_minutes <= 1 %}\n  {{ sensor_name }}: 1 Minute\n{%
-                elif open_minutes <= 180 %}\n  {{ sensor_name }}: {{ open_minutes
-                }} Minuten\n{% else %}\n  {{ sensor_name }}: {{ open_minutes // 60
-                | int }} Stunden\n{% endif %}"
-              data:
-                tag: '{{ sensor_id }}'
-                ttl: 0
-                priority: high
-                notification_icon: mdi:weather-windy
-            action: notify.mobile_app_{{ device_name }}
-  mode: single
+        value_template: '{{ notification_delay | int == 0 }}'
+      - action: script.mobile_send_notification
+        data:
+          title: '{{ sensor_name }}'
+          message: "{% if open_minutes <= 1 %}\n  1 Minute\n{% elif open_minutes <=
+            180 %}\n  {{ open_minutes }} Minuten\n{% else %}\n  {{ open_minutes //
+            60 | int }} Stunden\n{% endif %}"
+          tag: '{{ sensor_id }}'
+          notification_icon: mdi:weather-windy
 - id: '1730460534845'
   alias: Heizungsraum | Kondenswasser
   description: ''
@@ -339,14 +321,14 @@
     entity_id: d4e85875cb7b9271d443fba9d4d11b9d
     domain: binary_sensor
   actions:
-  - action: notify.mobile_app_obsidian
-    data_template:
+  - action: script.mobile_send_notification
+    data:
+      recipients:
+      - obsidian
+      must_be_home: false
       message: Kondenswasser Eimer leeren!
-      data:
-        tag: '{{ this.entity_id }}'
-        ttl: 0
-        priority: high
-        notification_icon: mdi:cup-water
+      tag: heating_room_condensate
+      notification_icon: mdi:cup-water
   mode: single
   max: 10
 - id: '1731959427205'
@@ -397,22 +379,150 @@
   mode: single
 - id: '1746040248436'
   alias: musiCosy | Batterie Benachrichtigung
-  description: ''
+  description: 'Sends low-battery reminders for both musiCosy headphones. A dismissal
+    remains active while the battery is below 60%, and is reset after charging.
+
+    '
   triggers:
   - trigger: time
     at: 06:30:00
+    id: scheduled
   - trigger: time
     at: '18:00:00'
-  conditions:
-  - condition: numeric_state
-    entity_id: sensor.musicosy_battery_level
-    below: 60
+    id: scheduled
+  - trigger: time
+    at: '22:00:00'
+    id: scheduled
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MUSICOSY_BATTERY_DISMISS
+    id: dismiss_musicosy
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MUSICOSY_2_BATTERY_DISMISS
+    id: dismiss_musicosy_2
+  - trigger: numeric_state
+    entity_id:
+    - sensor.musicosy_battery_level
+    above: 1
+    id: recovered_musicosy
+  - trigger: numeric_state
+    entity_id:
+    - sensor.musicosy_2_battery_level
+    above: 1
+    id: recovered_musicosy_2
   actions:
-  - data:
-      title: musiCosy
-      message: '{{ states(''sensor.musicosy_battery_level'') }}%'
-    action: notify.mobile_app_obsidian
-  mode: single
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: dismiss_musicosy
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.musicosy_battery_notification_dismissed
+      - action: script.mobile_send_notification
+        data:
+          recipients:
+          - obsidian
+          must_be_home: false
+          message: clear_notification
+          tag: musicosy.battery_low
+    - conditions:
+      - condition: trigger
+        id: dismiss_musicosy_2
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.musicosy_2_battery_notification_dismissed
+      - action: script.mobile_send_notification
+        data:
+          recipients:
+          - obsidian
+          must_be_home: false
+          message: clear_notification
+          tag: musicosy_2.battery_low
+    - conditions:
+      - condition: trigger
+        id: recovered_musicosy
+      - condition: state
+        entity_id: input_boolean.musicosy_battery_notification_dismissed
+        state: 'off'
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.musicosy_battery_notification_dismissed
+      - action: script.mobile_send_notification
+        data:
+          recipients:
+          - obsidian
+          must_be_home: false
+          message: clear_notification
+          tag: musicosy.battery_low
+    - conditions:
+      - condition: trigger
+        id: recovered_musicosy_2
+      - condition: state
+        entity_id: input_boolean.musicosy_2_battery_notification_dismissed
+        state: 'off'
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.musicosy_2_battery_notification_dismissed
+      - action: script.mobile_send_notification
+        data:
+          recipients:
+          - obsidian
+          must_be_home: false
+          message: clear_notification
+          tag: musicosy_2.battery_low
+    - conditions:
+      - condition: trigger
+        id: scheduled
+      sequence:
+      - if:
+        - condition: numeric_state
+          entity_id: sensor.musicosy_battery_level
+          below: 60
+        - condition: state
+          entity_id: input_boolean.musicosy_battery_notification_dismissed
+          state: 'off'
+        then:
+        - action: script.mobile_send_notification
+          data:
+            recipients:
+            - obsidian
+            title: musiCosy
+            message: '{{ states(''sensor.musicosy_battery_level'') | float(0) | round(0)
+              | int }}% verbleibend'
+            tag: musicosy.battery_low
+            notification_icon: mdi:headphones-battery
+            actions:
+            - action: MUSICOSY_BATTERY_DISMISS
+              title: Reset
+      - if:
+        - condition: numeric_state
+          entity_id: sensor.musicosy_2_battery_level
+          below: 60
+        - condition: state
+          entity_id: input_boolean.musicosy_2_battery_notification_dismissed
+          state: 'off'
+        then:
+        - action: script.mobile_send_notification
+          data:
+            recipients:
+            - obsidian
+            title: musiCosy 2
+            message: '{{ states(''sensor.musicosy_2_battery_level'') | float(0) |
+              round(0) | int }}% verbleibend'
+            tag: musicosy_2.battery_low
+            notification_icon: mdi:headphones-battery
+            actions:
+            - action: MUSICOSY_2_BATTERY_DISMISS
+              title: Reset
+  mode: queued
+  max: 10
 - id: '1750364021950'
   alias: Flur | Luftentfeuchter Kombi
   description: ''
@@ -569,16 +679,14 @@
     entity_id: switch.lager_steckdose_luftentfeuchter_schalter
     state: 'on'
   actions:
-  - data:
-      message: 'Lager | Luftentfeuchter voll
-
-        '
-      data:
-        tag: '{{ this.entity_id }}'
-        ttl: 0
-        priority: high
-        notification_icon: mdi:air-humidifier-off
-    action: notify.mobile_app_obsidian
+  - action: script.mobile_send_notification
+    data:
+      recipients:
+      - obsidian
+      must_be_home: false
+      message: Lager | Luftentfeuchter voll
+      tag: '{{ this.entity_id }}'
+      notification_icon: mdi:air-humidifier-off
   mode: single
 - id: '1757144795034'
   alias: Flur | Luftentfeuchter Voll Benachrichtigung
@@ -639,16 +747,14 @@
     entity_id: switch.vorratsraum_steckdose_luftentfeuchter_schalter
     state: 'on'
   actions:
-  - data:
-      message: 'Flur | Luftentfeuchter voll
-
-        '
-      data:
-        tag: '{{ this.entity_id }}'
-        ttl: 0
-        priority: high
-        notification_icon: mdi:air-humidifier-off
-    action: notify.mobile_app_obsidian
+  - action: script.mobile_send_notification
+    data:
+      recipients:
+      - obsidian
+      must_be_home: false
+      message: Flur | Luftentfeuchter voll
+      tag: '{{ this.entity_id }}'
+      notification_icon: mdi:air-humidifier-off
   mode: single
 - id: '1757712408719'
   alias: Waschküche | Luftentfeuchter Voll Benachrichtigung
@@ -709,16 +815,14 @@
     entity_id: switch.waschkuche_steckdose_luftentfeuchter_schalter
     state: 'on'
   actions:
-  - data:
-      message: 'Waschküche | Luftentfeuchter voll
-
-        '
-      data:
-        tag: '{{ this.entity_id }}'
-        ttl: 0
-        priority: high
-        notification_icon: mdi:air-humidifier-off
-    action: notify.mobile_app_obsidian
+  - action: script.mobile_send_notification
+    data:
+      recipients:
+      - obsidian
+      must_be_home: false
+      message: Waschküche | Luftentfeuchter voll
+      tag: '{{ this.entity_id }}'
+      notification_icon: mdi:air-humidifier-off
   mode: single
 - id: '1757877683393'
   alias: Batterie-Monitor | Austausch Benachrichtigen
@@ -787,16 +891,14 @@
       entity_id: switch.garten_bewasserung_schalter
     action: switch.turn_on
     data: {}
-  - data:
-      message: 'Garten | Bewässerung gestartet
-
-        '
-      data:
-        tag: '{{ this.entity_id }}'
-        ttl: 0
-        priority: high
-        notification_icon: mdi:watering-can-outline
-    action: notify.mobile_app_obsidian
+  - action: script.mobile_send_notification
+    data:
+      recipients:
+      - obsidian
+      must_be_home: false
+      message: Garten | Bewässerung gestartet
+      tag: '{{ this.entity_id }}'
+      notification_icon: mdi:watering-can-outline
   mode: single
   max: 10
 - id: '1776798681627'
@@ -819,16 +921,14 @@
       entity_id:
       - switch.garten_bewasserung_schalter
     data: {}
-  - data:
-      message: 'Garten | Bewässerung beendet
-
-        '
-      data:
-        tag: '{{ this.entity_id }}'
-        ttl: 0
-        priority: high
-        notification_icon: mdi:watering-can-outline
-    action: notify.mobile_app_obsidian
+  - action: script.mobile_send_notification
+    data:
+      recipients:
+      - obsidian
+      must_be_home: false
+      message: Garten | Bewässerung beendet
+      tag: '{{ this.entity_id }}'
+      notification_icon: mdi:watering-can-outline
   mode: single
   max: 10
 - id: '1778873511403'
@@ -844,10 +944,14 @@
     entity_id: sensor.musicosy_2_battery_level
     below: 60
   actions:
-  - data:
+  - action: script.mobile_send_notification
+    data:
+      recipients:
+      - obsidian
       title: musiCosy 2
-      message: '{{ states(''sensor.musicosy_2_battery_level'') }}%'
-    action: notify.mobile_app_obsidian
+      message: '{{ states(''sensor.musicosy_2_battery_level'') }}% verbleibend'
+      tag: '{{ this.entity_id }}'
+      notification_icon: mdi:watering-can-outline
   mode: single
 - id: '1780944090810'
   alias: PlayBee | NFC event router

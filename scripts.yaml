@@ -455,3 +455,107 @@ playbee_track_navigation:
         message: 'PlayBee track navigation: unsupported action_type={{ navigation_action
           }}'
   description: ''
+mobile_send_notification:
+  alias: Mobile | Send notification
+  description: Send a notification to configured phones, defaulting to reachable/home
+    phones only.
+  mode: parallel
+  max: 20
+  fields:
+    message:
+      name: Message
+      required: true
+      selector:
+        text:
+          multiline: true
+    title:
+      name: Title
+      required: false
+      selector:
+        text:
+    tag:
+      name: Tag
+      required: false
+      selector:
+        text:
+    notification_icon:
+      name: Notification icon
+      required: false
+      selector:
+        icon:
+    priority:
+      name: Priority
+      required: false
+      default: high
+      selector:
+        select:
+          options:
+          - min
+          - low
+          - default
+          - high
+          - max
+    ttl:
+      name: TTL
+      required: false
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 2419200
+          mode: box
+    click_action:
+      name: Click action
+      required: false
+      selector:
+        text:
+    actions:
+      name: Actions
+      required: false
+      selector:
+        object:
+    recipients:
+      name: Recipients
+      description: Notify-service suffixes, e.g. obsidian or hazel. Empty means all
+        configured recipients.
+      required: false
+      selector:
+        object:
+    must_be_home:
+      name: Must be home
+      description: Only notify recipients whose ping binary sensor is on.
+      required: false
+      default: true
+      selector:
+        boolean:
+  sequence:
+  - variables:
+      recipient_registry:
+        obsidian:
+          presence_entity: binary_sensor.pixel_9_pro_obsidian_ping
+        hazel:
+          presence_entity: binary_sensor.pixel_9_pro_hazel_ping
+      requested_recipients: "{% if recipients is defined and recipients | default([])
+        | count > 0 %}\n  {{ recipients }}\n{% else %}\n  {{ recipient_registry.keys()
+        | list }}\n{% endif %}"
+  - repeat:
+      for_each: '{{ requested_recipients }}'
+      sequence:
+      - variables:
+          recipient: '{{ repeat.item }}'
+          presence_entity: '{{ recipient_registry.get(recipient, {}).get(''presence_entity'',
+            '''') }}'
+      - condition: template
+        value_template: "{{\n  recipient in recipient_registry\n  and (\n    not (must_be_home
+          | default(true))\n    or is_state(presence_entity, 'on')\n  )\n}}"
+      - action: notify.mobile_app_{{ recipient }}
+        data:
+          title: '{{ title | default('''', true) }}'
+          message: '{{ message }}'
+          data:
+            tag: '{{ tag | default(none, true) }}'
+            ttl: '{{ ttl | default(0) }}'
+            priority: '{{ priority | default(''high'') }}'
+            notification_icon: '{{ notification_icon | default(none, true) }}'
+            clickAction: '{{ click_action | default(none, true) }}'
+            actions: '{{ actions | default([], true) }}'
