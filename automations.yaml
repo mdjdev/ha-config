@@ -1111,3 +1111,38 @@
     metadata: {}
     data: {}
   mode: single
+- id: '1782643855442'
+  alias: PlayBee | Clear stale active tag helper
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.playbee_tagreader_v2_card_present
+    to:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 2
+  - trigger: state
+    entity_id:
+    - media_player.playbee_speaker
+    to:
+    - idle
+    - 'off'
+    - standby
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 2
+  conditions:
+  - condition: template
+    value_template: '{{ states(''input_text.playbee_active_tag_uid'') not in ['''',
+      ''unknown'', ''unavailable''] }}'
+  actions:
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.playbee_active_tag_uid
+    data:
+      value: ''
+  mode: single
