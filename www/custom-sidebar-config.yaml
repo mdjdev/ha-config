@@ -15,7 +15,6 @@ js_variables:
       - _ssh # Terminal
       - _logviewer
       - _home-assistant-version-control
-      - /entity_manager
       - _ha_mcp
     system:
       - /config/dashboard
@@ -234,21 +233,6 @@ order:
     attributes:
       data-nested-item: "true"
       data-nested-group: "apps"
-
-  - item: Entity Manager
-    exact: true
-    hide: |
-      [[[
-        const open = refs.apps_group_open;
-        const current = window.location.pathname;
-        const active = group_paths.apps.some(
-          (path) => current === path || current.includes(path)
-        );
-        return !(open || active);
-      ]]]
-    attributes:
-      data-nested-item: "true"
-      data-nested-group: "apps"
       
   - item: Home Assistant MCP Server
     exact: true
@@ -368,10 +352,6 @@ order:
     attributes:
       data-nested-item: "true"
       data-nested-group: "system"
-
-  - item: Energie
-    exact: true
-    hide: true
 
   - item: Medien
     exact: true
