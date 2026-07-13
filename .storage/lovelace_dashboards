@@ -5,7 +5,7 @@
   "data": {
     "items": [
       {
-        "id": "dashboard_test",
+        "id": "dashboard_home",
         "show_in_sidebar": true,
         "title": "Home",
         "require_admin": false,
