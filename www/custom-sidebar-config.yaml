@@ -34,6 +34,10 @@ order:
     exact: true
     hide: false
     
+  - item: Dev
+    exact: true
+    hide: false
+    
   - item: PlayBee
     exact: true
     hide: false

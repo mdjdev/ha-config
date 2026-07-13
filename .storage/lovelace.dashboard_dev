@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "lovelace.dashboard_dev",
+  "data": {
+    "config": {
+      "views": [
+        {
+          "type": "sections",
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Neuer Abschnitt"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

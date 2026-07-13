@@ -20,6 +20,15 @@
         "require_admin": false,
         "mode": "storage",
         "url_path": "dashboard-playbee"
+      },
+      {
+        "id": "dashboard_dev",
+        "show_in_sidebar": true,
+        "icon": "mdi:progress-wrench",
+        "title": "Dev",
+        "require_admin": true,
+        "mode": "storage",
+        "url_path": "dashboard-dev"
       }
     ]
   }
