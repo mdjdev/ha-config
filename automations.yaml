@@ -378,149 +378,74 @@
     data: {}
   mode: single
 - id: '1746040248436'
-  alias: musiCosy | Batterie Benachrichtigung
-  description: 'Sends low-battery reminders for both musiCosy headphones. A dismissal
-    remains active while the battery is below 60%, and is reset after charging.
+  alias: musiCosy | Batterie Benachrichtigung anzeigen
+  description: 'Sends scheduled low-battery reminders for both musiCosy headphones
+    when their battery level is below 60% and their reminder has not been dismissed.
 
     '
   triggers:
   - trigger: time
     at: 06:30:00
-    id: scheduled
+    id: scheduled_morning
   - trigger: time
     at: '18:00:00'
-    id: scheduled
+    id: scheduled_evening
   - trigger: time
     at: '22:00:00'
-    id: scheduled
-  - trigger: event
-    event_type: mobile_app_notification_action
-    event_data:
-      action: MUSICOSY_BATTERY_DISMISS
-    id: dismiss_musicosy
-  - trigger: event
-    event_type: mobile_app_notification_action
-    event_data:
-      action: MUSICOSY_2_BATTERY_DISMISS
-    id: dismiss_musicosy_2
-  - trigger: numeric_state
-    entity_id:
-    - sensor.musicosy_battery_level
-    above: 1
-    id: recovered_musicosy
-  - trigger: numeric_state
-    entity_id:
-    - sensor.musicosy_2_battery_level
-    above: 1
-    id: recovered_musicosy_2
+    id: scheduled_night
   actions:
-  - choose:
-    - conditions:
-      - condition: trigger
-        id: dismiss_musicosy
-      sequence:
-      - action: input_boolean.turn_on
-        target:
-          entity_id: input_boolean.musicosy_battery_notification_dismissed
-      - action: script.mobile_send_notification
-        data:
-          recipients:
-          - obsidian
-          must_be_home: false
-          message: clear_notification
-          tag: musicosy.battery_low
-    - conditions:
-      - condition: trigger
-        id: dismiss_musicosy_2
-      sequence:
-      - action: input_boolean.turn_on
-        target:
-          entity_id: input_boolean.musicosy_2_battery_notification_dismissed
-      - action: script.mobile_send_notification
-        data:
-          recipients:
-          - obsidian
-          must_be_home: false
-          message: clear_notification
-          tag: musicosy_2.battery_low
-    - conditions:
-      - condition: trigger
-        id: recovered_musicosy
-      - condition: state
+  - alias: Check and notify for both headphones
+    sequence:
+    - alias: Check and notify for musiCosy
+      if:
+      - alias: musiCosy battery is below 60 percent
+        condition: numeric_state
+        entity_id: sensor.musicosy_battery_level
+        below: 60
+      - alias: musiCosy notification is not dismissed
+        condition: state
         entity_id: input_boolean.musicosy_battery_notification_dismissed
         state: 'off'
-      sequence:
-      - action: input_boolean.turn_off
-        target:
-          entity_id: input_boolean.musicosy_battery_notification_dismissed
-      - action: script.mobile_send_notification
+      then:
+      - alias: Send musiCosy low-battery notification
+        action: script.mobile_send_notification
         data:
           recipients:
           - obsidian
           must_be_home: false
-          message: clear_notification
+          title: musiCosy
+          message: "{{ states('sensor.musicosy_battery_level')\n   | float(0) | round(0)
+            | int }}% verbleibend\n"
           tag: musicosy.battery_low
-    - conditions:
-      - condition: trigger
-        id: recovered_musicosy_2
-      - condition: state
+          notification_icon: mdi:headphones-battery
+          actions:
+          - action: MUSICOSY_BATTERY_DISMISS
+            title: Reset
+    - alias: Check and notify for musiCosy 2
+      if:
+      - alias: musiCosy 2 battery is below 60 percent
+        condition: numeric_state
+        entity_id: sensor.musicosy_2_battery_level
+        below: 60
+      - alias: musiCosy 2 notification is not dismissed
+        condition: state
         entity_id: input_boolean.musicosy_2_battery_notification_dismissed
         state: 'off'
-      sequence:
-      - action: input_boolean.turn_off
-        target:
-          entity_id: input_boolean.musicosy_2_battery_notification_dismissed
-      - action: script.mobile_send_notification
+      then:
+      - alias: Send musiCosy 2 low-battery notification
+        action: script.mobile_send_notification
         data:
           recipients:
           - obsidian
           must_be_home: false
-          message: clear_notification
+          title: musiCosy 2
+          message: "{{ states('sensor.musicosy_2_battery_level')\n   | float(0) |
+            round(0) | int }}% verbleibend\n"
           tag: musicosy_2.battery_low
-    - conditions:
-      - condition: trigger
-        id: scheduled
-      sequence:
-      - if:
-        - condition: numeric_state
-          entity_id: sensor.musicosy_battery_level
-          below: 60
-        - condition: state
-          entity_id: input_boolean.musicosy_battery_notification_dismissed
-          state: 'off'
-        then:
-        - action: script.mobile_send_notification
-          data:
-            recipients:
-            - obsidian
-            title: musiCosy
-            message: '{{ states(''sensor.musicosy_battery_level'') | float(0) | round(0)
-              | int }}% verbleibend'
-            tag: musicosy.battery_low
-            notification_icon: mdi:headphones-battery
-            actions:
-            - action: MUSICOSY_BATTERY_DISMISS
-              title: Reset
-      - if:
-        - condition: numeric_state
-          entity_id: sensor.musicosy_2_battery_level
-          below: 60
-        - condition: state
-          entity_id: input_boolean.musicosy_2_battery_notification_dismissed
-          state: 'off'
-        then:
-        - action: script.mobile_send_notification
-          data:
-            recipients:
-            - obsidian
-            title: musiCosy 2
-            message: '{{ states(''sensor.musicosy_2_battery_level'') | float(0) |
-              round(0) | int }}% verbleibend'
-            tag: musicosy_2.battery_low
-            notification_icon: mdi:headphones-battery
-            actions:
-            - action: MUSICOSY_2_BATTERY_DISMISS
-              title: Reset
+          notification_icon: mdi:headphones-battery
+          actions:
+          - action: MUSICOSY_2_BATTERY_DISMISS
+            title: Reset
   mode: queued
   max: 10
 - id: '1750364021950'
@@ -1250,3 +1175,111 @@
     data:
       value: ''
   mode: single
+- id: '1784489014241'
+  alias: musiCosy | Batterie Benachrichtigung pausieren
+  description: 'Sets the matching dismissal state after the Reset action is pressed
+    and removes the matching notification from the phone.
+
+    '
+  triggers:
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MUSICOSY_BATTERY_DISMISS
+    id: dismiss_musicosy
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MUSICOSY_2_BATTERY_DISMISS
+    id: dismiss_musicosy_2
+  actions:
+  - alias: Handle selected dismiss action
+    choose:
+    - alias: Dismiss musiCosy notification
+      conditions:
+      - alias: Check for musiCosy dismiss action
+        condition: trigger
+        id: dismiss_musicosy
+      sequence:
+      - alias: Mark musiCosy notification as dismissed
+        action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.musicosy_battery_notification_dismissed
+      - alias: Clear musiCosy notification on Obsidian
+        action: script.mobile_send_notification
+        data:
+          recipients:
+          - obsidian
+          must_be_home: false
+          message: clear_notification
+          tag: musicosy.battery_low
+    - alias: Dismiss musiCosy 2 notification
+      conditions:
+      - alias: Check for musiCosy 2 dismiss action
+        condition: trigger
+        id: dismiss_musicosy_2
+      sequence:
+      - alias: Mark musiCosy 2 notification as dismissed
+        action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.musicosy_2_battery_notification_dismissed
+      - alias: Clear musiCosy 2 notification on Obsidian
+        action: script.mobile_send_notification
+        data:
+          recipients:
+          - obsidian
+          must_be_home: false
+          message: clear_notification
+          tag: musicosy_2.battery_low
+  mode: queued
+  max: 10
+- id: '1784489777086'
+  alias: musiCosy | Batterie Benachrichtigung zurücksetzen
+  description: 'Re-arms the relevant low-battery notification whenever that headphone''s
+    battery level changes in either direction.
+
+    '
+  triggers:
+  - trigger: state
+    entity_id: sensor.musicosy_battery_level
+    not_from:
+    - unknown
+    - unavailable
+    not_to:
+    - unknown
+    - unavailable
+    id: recovered_musicosy
+  - trigger: state
+    entity_id: sensor.musicosy_2_battery_level
+    not_from:
+    - unknown
+    - unavailable
+    not_to:
+    - unknown
+    - unavailable
+    id: recovered_musicosy_2
+  actions:
+  - alias: Reset matching dismissal state
+    choose:
+    - alias: Recover musiCosy notification
+      conditions:
+      - alias: Check for musiCosy battery change
+        condition: trigger
+        id: recovered_musicosy
+      sequence:
+      - alias: Re-arm musiCosy low-battery notification
+        action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.musicosy_battery_notification_dismissed
+    - alias: Recover musiCosy 2 notification
+      conditions:
+      - alias: Check for musiCosy 2 battery change
+        condition: trigger
+        id: recovered_musicosy_2
+      sequence:
+      - alias: Re-arm musiCosy 2 low-battery notification
+        action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.musicosy_2_battery_notification_dismissed
+  mode: queued
+  max: 10
