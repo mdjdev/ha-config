@@ -405,6 +405,10 @@
               "show_state": true,
               "show_icon": true,
               "entity": "sensor.garten_thermo_hygrometer_humidity"
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.garten_thermo_hygrometer_absolute_humidity"
             }
           ]
         },
@@ -670,6 +674,10 @@
               "show_state": true,
               "show_icon": true,
               "entity": "sensor.garten_thermo_hygrometer_humidity"
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.garten_thermo_hygrometer_absolute_humidity"
             }
           ]
         },
@@ -1377,6 +1385,10 @@
               "show_state": true,
               "show_icon": true,
               "entity": "sensor.garten_thermo_hygrometer_humidity"
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.garten_thermo_hygrometer_absolute_humidity"
             }
           ]
         }
