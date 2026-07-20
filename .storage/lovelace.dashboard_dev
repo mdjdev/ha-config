@@ -6,14 +6,1434 @@
     "config": {
       "views": [
         {
+          "title": "Obergeschoss",
+          "path": "obergeschoss",
+          "icon": "mdi:home-floor-1",
           "type": "sections",
+          "max_columns": 4,
+          "badges": [
+            {
+              "type": "entity",
+              "entity": "sensor.garten_thermo_hygrometer_temperature",
+              "show_name": false,
+              "show_state": true,
+              "show_icon": true
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.garten_thermo_hygrometer_humidity",
+              "show_name": false,
+              "show_state": true,
+              "show_icon": true
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.garten_thermo_hygrometer_absolute_humidity",
+              "show_name": false,
+              "show_state": true,
+              "show_icon": true
+            }
+          ],
           "sections": [
             {
               "type": "grid",
               "cards": [
                 {
                   "type": "heading",
-                  "heading": "Neuer Abschnitt"
+                  "heading": "Raumübersicht",
+                  "icon": "mdi:view-dashboard-outline"
+                },
+                {
+                  "type": "heading",
+                  "heading": "Badezimmer",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:shower"
+                },
+                {
+                  "type": "grid",
+                  "columns": 3,
+                  "square": false,
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "sensor.hmip_badezimmer_luftsensor_temperatur",
+                      "name": "Temperatur",
+                      "icon": "mdi:thermometer",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.hmip_badezimmer_luftsensor_luftfeuchtigkeit",
+                      "name": "RLF",
+                      "icon": "mdi:water-percent",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.hmip_temperatur_und_luftfeuchtigkeitssensor_badezimmer_absolute_humidity",
+                      "name": "Absolut",
+                      "icon": "mdi:water",
+                      "vertical": false,
+                      "features_position": "bottom"
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "heading": "Kinderzimmer",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:teddy-bear"
+                },
+                {
+                  "type": "grid",
+                  "columns": 3,
+                  "square": false,
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "sensor.hmip_kinderzimmer_luftsensor_temperatur",
+                      "name": "Temperatur",
+                      "icon": "mdi:thermometer",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.hmip_kinderzimmer_luftsensor_luftfeuchtigkeit",
+                      "name": "RLF",
+                      "icon": "mdi:water-percent",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.hmip_temperatur_und_luftfeuchtigkeitssensor_kinderzimmer_absolute_humidity",
+                      "name": "Absolut",
+                      "icon": "mdi:water",
+                      "vertical": false
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "heading": "Schlafzimmer",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:bed"
+                },
+                {
+                  "type": "grid",
+                  "columns": 3,
+                  "square": false,
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "sensor.schlafzimmer_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "icon": "mdi:thermometer",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.schlafzimmer_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "icon": "mdi:water-percent",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.schlafzimmer_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity",
+                      "name": "Absolut",
+                      "icon": "mdi:water",
+                      "vertical": false
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "heading": "Büro",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:desk"
+                },
+                {
+                  "type": "grid",
+                  "columns": 3,
+                  "square": false,
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "sensor.buro_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "icon": "mdi:thermometer",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.buro_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "icon": "mdi:water-percent",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.buro_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity",
+                      "name": "Absolut",
+                      "icon": "mdi:water",
+                      "vertical": false
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Badezimmer",
+                  "icon": "mdi:shower",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.hmip_temperatur_und_luftfeuchtigkeitssensor_badezimmer_absolute_humidity",
+                      "show_state": true,
+                      "show_icon": true
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Temperatur & Luftfeuchtigkeit · 24 h",
+                  "icon": "mdi:chart-line",
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2,
+                  "entities": [
+                    {
+                      "entity": "sensor.hmip_badezimmer_luftsensor_luftfeuchtigkeit",
+                      "name": "RLF",
+                      "color": "#43A047",
+                      "show_state": true
+                    },
+                    {
+                      "entity": "sensor.hmip_badezimmer_luftsensor_temperatur",
+                      "name": "Temperatur",
+                      "color": "#FB8C00",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true,
+                    "extrema": false,
+                    "fill": false
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "binary_sensor.hmip_badezimmer_fenster",
+                  "name": "Fenster",
+                  "icon": "mdi:window-closed-variant",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.hmip_badezimmer_trv_ventil",
+                  "name": "Ventilöffnung",
+                  "icon": "mdi:radiator",
+                  "vertical": false
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Kinderzimmer",
+                  "icon": "mdi:teddy-bear",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.hmip_temperatur_und_luftfeuchtigkeitssensor_kinderzimmer_absolute_humidity",
+                      "show_state": true,
+                      "show_icon": true
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Temperatur & Luftfeuchtigkeit · 24 h",
+                  "icon": "mdi:chart-line",
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2,
+                  "entities": [
+                    {
+                      "entity": "sensor.hmip_kinderzimmer_luftsensor_luftfeuchtigkeit",
+                      "name": "RLF",
+                      "color": "#43A047",
+                      "show_state": true
+                    },
+                    {
+                      "entity": "sensor.hmip_kinderzimmer_luftsensor_temperatur",
+                      "name": "Temperatur",
+                      "color": "#FB8C00",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true,
+                    "extrema": false,
+                    "fill": false
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "binary_sensor.hmip_kinderzimmer_fenster",
+                  "name": "Fenster",
+                  "icon": "mdi:window-closed-variant",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.hmip_kinderzimmer_trv_ventil",
+                  "name": "Ventilöffnung",
+                  "icon": "mdi:radiator",
+                  "vertical": false
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Schlafzimmer",
+                  "icon": "mdi:bed",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.schlafzimmer_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity",
+                      "show_state": true,
+                      "show_icon": true
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Temperatur & Luftfeuchtigkeit · 24 h",
+                  "icon": "mdi:chart-line",
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2,
+                  "entities": [
+                    {
+                      "entity": "sensor.schlafzimmer_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "#43A047",
+                      "show_state": true
+                    },
+                    {
+                      "entity": "sensor.schlafzimmer_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "#FB8C00",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true,
+                    "extrema": false,
+                    "fill": false
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "binary_sensor.hmip_schlafzimmer_fenster",
+                  "name": "Fenster",
+                  "icon": "mdi:window-closed-variant",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.hmip_schlafzimmer_trv_ventil",
+                  "name": "Ventilöffnung",
+                  "icon": "mdi:radiator",
+                  "vertical": false
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Büro",
+                  "icon": "mdi:desk",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.buro_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity",
+                      "show_state": true,
+                      "show_icon": true
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Temperatur & Luftfeuchtigkeit · 24 h",
+                  "icon": "mdi:chart-line",
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2,
+                  "entities": [
+                    {
+                      "entity": "sensor.buro_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "#43A047",
+                      "show_state": true
+                    },
+                    {
+                      "entity": "sensor.buro_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "#FB8C00",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true,
+                    "extrema": false,
+                    "fill": false
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "binary_sensor.hmip_buro_fenster",
+                  "name": "Fenster",
+                  "icon": "mdi:window-closed-variant",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.hmip_buro_trv_ventil",
+                  "name": "Ventilöffnung",
+                  "icon": "mdi:radiator",
+                  "vertical": false
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zusätzliche Sensoren",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:access-point"
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Bag 03 · 24 h",
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2,
+                  "entities": [
+                    {
+                      "entity": "sensor.bag_03_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "#43A047",
+                      "show_state": true
+                    },
+                    {
+                      "entity": "sensor.bag_03_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "#FB8C00",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true,
+                    "extrema": false,
+                    "fill": false
+                  }
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Bag 04 · 24 h",
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2,
+                  "entities": [
+                    {
+                      "entity": "sensor.bag_04_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "#43A047",
+                      "show_state": true
+                    },
+                    {
+                      "entity": "sensor.bag_04_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "#FB8C00",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true,
+                    "extrema": false,
+                    "fill": false
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Erdgeschoss",
+          "path": "ergeschoss",
+          "icon": "mdi:home-floor-g",
+          "type": "sections",
+          "max_columns": 4,
+          "badges": [
+            {
+              "type": "entity",
+              "entity": "sensor.garten_thermo_hygrometer_temperature",
+              "show_name": false,
+              "show_state": true
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.garten_thermo_hygrometer_humidity",
+              "show_name": false,
+              "show_state": true
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.garten_thermo_hygrometer_absolute_humidity",
+              "show_name": false,
+              "show_state": true
+            }
+          ],
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Raumübersicht",
+                  "icon": "mdi:view-dashboard-outline"
+                },
+                {
+                  "type": "heading",
+                  "heading": "Wohnzimmer",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:sofa"
+                },
+                {
+                  "type": "grid",
+                  "columns": 3,
+                  "square": false,
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "sensor.hmip_wohnzimmer_wandthermostat_temperatur",
+                      "name": "Temperatur",
+                      "icon": "mdi:thermometer",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.hmip_wohnzimmer_wandthermostat_luftfeuchtigkeit",
+                      "name": "RLF",
+                      "icon": "mdi:water-percent",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.hmip_wandthermostat_absolute_humidity",
+                      "name": "Absolut",
+                      "icon": "mdi:water",
+                      "vertical": false
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "heading": "Küche",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:countertop"
+                },
+                {
+                  "type": "grid",
+                  "columns": 3,
+                  "square": false,
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "sensor.kuche_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "icon": "mdi:thermometer",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.kuche_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "icon": "mdi:water-percent",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.kuche_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity",
+                      "name": "Absolut",
+                      "icon": "mdi:water",
+                      "vertical": false
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "heading": "Gäste-WC",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:toilet"
+                },
+                {
+                  "type": "grid",
+                  "columns": 3,
+                  "square": false,
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "sensor.gaste_wc_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "icon": "mdi:thermometer",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.gaste_wc_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "icon": "mdi:water-percent",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.gaste_wc_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity",
+                      "name": "Absolut",
+                      "icon": "mdi:water",
+                      "vertical": false
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Wohnzimmer",
+                  "icon": "mdi:sofa",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.hmip_wandthermostat_absolute_humidity"
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Temperatur & Luftfeuchtigkeit · 24 h",
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2,
+                  "entities": [
+                    {
+                      "entity": "sensor.hmip_wohnzimmer_wandthermostat_luftfeuchtigkeit",
+                      "name": "RLF",
+                      "color": "#43A047",
+                      "show_state": true
+                    },
+                    {
+                      "entity": "sensor.hmip_wohnzimmer_wandthermostat_temperatur",
+                      "name": "Temperatur",
+                      "color": "#FB8C00",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true,
+                    "extrema": false,
+                    "fill": false
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "binary_sensor.hmip_wohnzimmer_schiebetur",
+                  "name": "Schiebetür",
+                  "icon": "mdi:door-sliding",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.hmip_wohnzimmer_trv_sofa_ventil",
+                  "name": "Ventil · Sofa",
+                  "icon": "mdi:radiator",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.hmip_wohnzimmer_trv_flur_ventil",
+                  "name": "Ventil · Flur",
+                  "icon": "mdi:radiator",
+                  "vertical": false
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Küche",
+                  "icon": "mdi:countertop",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.kuche_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity"
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Temperatur & Luftfeuchtigkeit · 24 h",
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2,
+                  "entities": [
+                    {
+                      "entity": "sensor.kuche_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "#43A047",
+                      "show_state": true
+                    },
+                    {
+                      "entity": "sensor.kuche_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "#FB8C00",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true,
+                    "extrema": false,
+                    "fill": false
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "binary_sensor.hmip_kuche_fenster",
+                  "name": "Fenster",
+                  "icon": "mdi:window-closed-variant",
+                  "vertical": false
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Gäste-WC",
+                  "icon": "mdi:toilet",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.gaste_wc_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity"
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Temperatur & Luftfeuchtigkeit · 24 h",
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2,
+                  "entities": [
+                    {
+                      "entity": "sensor.gaste_wc_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "#43A047",
+                      "show_state": true
+                    },
+                    {
+                      "entity": "sensor.gaste_wc_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "#FB8C00",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true,
+                    "extrema": false,
+                    "fill": false
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "binary_sensor.hmip_gaste_wc_fenster",
+                  "name": "Fenster",
+                  "icon": "mdi:window-closed-variant",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.hmip_gaste_wc_trv_ventil",
+                  "name": "Ventilöffnung",
+                  "icon": "mdi:radiator",
+                  "vertical": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Keller",
+          "path": "keller",
+          "icon": "mdi:home-floor-negative-1",
+          "type": "sections",
+          "max_columns": 4,
+          "badges": [
+            {
+              "type": "entity",
+              "entity": "sensor.garten_thermo_hygrometer_temperature",
+              "show_name": false,
+              "show_state": true
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.garten_thermo_hygrometer_humidity",
+              "show_name": false,
+              "show_state": true
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.garten_thermo_hygrometer_absolute_humidity",
+              "show_name": false,
+              "show_state": true
+            }
+          ],
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Raumübersicht",
+                  "icon": "mdi:view-dashboard-outline"
+                },
+                {
+                  "type": "heading",
+                  "heading": "Treppenhaus",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:stairs"
+                },
+                {
+                  "type": "grid",
+                  "columns": 3,
+                  "square": false,
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "sensor.keller_treppenhaus_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "icon": "mdi:thermometer",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.keller_treppenhaus_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "icon": "mdi:water-percent",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.keller_treppenhaus_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity",
+                      "name": "Absolut",
+                      "icon": "mdi:water",
+                      "vertical": false
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "heading": "Waschküche",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:washing-machine"
+                },
+                {
+                  "type": "grid",
+                  "columns": 3,
+                  "square": false,
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "sensor.waschkuche_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "icon": "mdi:thermometer",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.waschkuche_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "icon": "mdi:water-percent",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.waschkuche_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity",
+                      "name": "Absolut",
+                      "icon": "mdi:water",
+                      "vertical": false
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "heading": "Lager",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:archive"
+                },
+                {
+                  "type": "grid",
+                  "columns": 3,
+                  "square": false,
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "sensor.lager_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "icon": "mdi:thermometer",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.lager_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "icon": "mdi:water-percent",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.lager_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity",
+                      "name": "Absolut",
+                      "icon": "mdi:water",
+                      "vertical": false
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "heading": "Vorratsraum",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:food-variant"
+                },
+                {
+                  "type": "grid",
+                  "columns": 3,
+                  "square": false,
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "sensor.vorratsraum_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "icon": "mdi:thermometer",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.vorratsraum_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "icon": "mdi:water-percent",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.vorratsraum_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity",
+                      "name": "Absolut",
+                      "icon": "mdi:water",
+                      "vertical": false
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "heading": "Werkraum",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:hammer-wrench"
+                },
+                {
+                  "type": "grid",
+                  "columns": 3,
+                  "square": false,
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "sensor.werkraum_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "icon": "mdi:thermometer",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.werkraum_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "icon": "mdi:water-percent",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.werkraum_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity",
+                      "name": "Absolut",
+                      "icon": "mdi:water",
+                      "vertical": false
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "heading": "Heizungsraum",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:boiler"
+                },
+                {
+                  "type": "grid",
+                  "columns": 3,
+                  "square": false,
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "sensor.lywsd03mmc_09_temperature",
+                      "name": "Temperatur",
+                      "icon": "mdi:thermometer",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.lywsd03mmc_09_humidity",
+                      "name": "RLF",
+                      "icon": "mdi:water-percent",
+                      "vertical": false
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "sensor.lywsd03mmc_09_absolute_humidity",
+                      "name": "Absolut",
+                      "icon": "mdi:water",
+                      "vertical": false
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Treppenhaus",
+                  "icon": "mdi:stairs",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.keller_treppenhaus_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity"
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Temperatur & Luftfeuchtigkeit · 24 h",
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2,
+                  "entities": [
+                    {
+                      "entity": "sensor.keller_treppenhaus_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "#43A047",
+                      "show_state": true
+                    },
+                    {
+                      "entity": "sensor.keller_treppenhaus_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "#FB8C00",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true,
+                    "extrema": false,
+                    "fill": false
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.hmip_keller_trv_ventil",
+                  "name": "Ventilöffnung",
+                  "icon": "mdi:radiator",
+                  "vertical": false
+                },
+                {
+                  "type": "conditional",
+                  "conditions": [
+                    {
+                      "condition": "state",
+                      "entity": "input_select.waschkueche_luftentfeuchter_standort",
+                      "state": "Treppenhaus"
+                    }
+                  ],
+                  "card": {
+                    "type": "tile",
+                    "entity": "sensor.waschkuche_steckdose_luftentfeuchter_leistung",
+                    "name": "Luftentfeuchter",
+                    "icon": "mdi:air-humidifier",
+                    "vertical": false
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Waschküche",
+                  "icon": "mdi:washing-machine",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.waschkuche_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity"
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Temperatur & Luftfeuchtigkeit · 24 h",
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2,
+                  "entities": [
+                    {
+                      "entity": "sensor.waschkuche_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "#43A047",
+                      "show_state": true
+                    },
+                    {
+                      "entity": "sensor.waschkuche_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "#FB8C00",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true,
+                    "extrema": false,
+                    "fill": false
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "binary_sensor.hmip_keller_waschkuche_fenster",
+                  "name": "Fenster",
+                  "icon": "mdi:window-closed-variant",
+                  "vertical": false
+                },
+                {
+                  "type": "conditional",
+                  "conditions": [
+                    {
+                      "condition": "state",
+                      "entity": "input_select.waschkueche_luftentfeuchter_standort",
+                      "state": "Waschküche"
+                    }
+                  ],
+                  "card": {
+                    "type": "tile",
+                    "entity": "sensor.waschkuche_steckdose_luftentfeuchter_leistung",
+                    "name": "Luftentfeuchter",
+                    "icon": "mdi:air-humidifier",
+                    "vertical": false
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Lager",
+                  "icon": "mdi:archive",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.lager_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity"
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Temperatur & Luftfeuchtigkeit · 24 h",
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2,
+                  "entities": [
+                    {
+                      "entity": "sensor.lager_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "#43A047",
+                      "show_state": true
+                    },
+                    {
+                      "entity": "sensor.lager_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "#FB8C00",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true,
+                    "extrema": false,
+                    "fill": false
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "switch.lager_steckdose_luftentfeuchter_schalter",
+                  "name": "Luftentfeuchter",
+                  "icon": "mdi:air-humidifier",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.lager_steckdose_luftentfeuchter_leistung",
+                  "name": "Luftentfeuchter",
+                  "icon": "mdi:flash",
+                  "vertical": false,
+                  "features_position": "bottom"
+                },
+                {
+                  "type": "tile",
+                  "entity": "automation.lager_luftentfeuchter",
+                  "name": "Entfeuchtungsregelung",
+                  "icon": "mdi:robot",
+                  "vertical": false
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Vorratsraum",
+                  "icon": "mdi:food-variant",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.vorratsraum_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity"
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Temperatur & Luftfeuchtigkeit · 24 h",
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2,
+                  "entities": [
+                    {
+                      "entity": "sensor.vorratsraum_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "#43A047",
+                      "show_state": true
+                    },
+                    {
+                      "entity": "sensor.vorratsraum_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "#FB8C00",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true,
+                    "extrema": false,
+                    "fill": false
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "switch.vorratsraum_steckdose_ventilator",
+                  "name": "Ventilator",
+                  "icon": "mdi:fan",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "automation.vorratsraum_ventilator",
+                  "name": "Lüftungsregelung",
+                  "icon": "mdi:robot",
+                  "vertical": false
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Werkraum",
+                  "icon": "mdi:hammer-wrench",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.werkraum_temperatur_und_luftfeuchtigkeitssensor_absolute_humidity"
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Temperatur & Luftfeuchtigkeit · 24 h",
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2,
+                  "entities": [
+                    {
+                      "entity": "sensor.werkraum_temperatur_und_luftfeuchtigkeitssensor_humidity",
+                      "name": "RLF",
+                      "color": "#43A047",
+                      "show_state": true
+                    },
+                    {
+                      "entity": "sensor.werkraum_temperatur_und_luftfeuchtigkeitssensor_temperature",
+                      "name": "Temperatur",
+                      "color": "#FB8C00",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true,
+                    "extrema": false,
+                    "fill": false
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Flur",
+                  "icon": "mdi:door-open"
+                },
+                {
+                  "type": "tile",
+                  "entity": "switch.vorratsraum_steckdose_luftentfeuchter_schalter",
+                  "name": "Luftentfeuchter",
+                  "icon": "mdi:air-humidifier",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.vorratsraum_steckdose_luftentfeuchter_leistung",
+                  "name": "Luftentfeuchter",
+                  "icon": "mdi:flash",
+                  "vertical": false,
+                  "features_position": "bottom"
+                },
+                {
+                  "type": "tile",
+                  "entity": "automation.flur_luftentfeuchter_kombi",
+                  "name": "Entfeuchtungsregelung",
+                  "icon": "mdi:robot",
+                  "vertical": false
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Heizungsraum",
+                  "icon": "mdi:boiler",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.lywsd03mmc_09_absolute_humidity"
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Temperatur & Luftfeuchtigkeit · 24 h",
+                  "hours_to_show": 24,
+                  "points_per_hour": 2,
+                  "line_width": 2,
+                  "entities": [
+                    {
+                      "entity": "sensor.lywsd03mmc_09_humidity",
+                      "name": "RLF",
+                      "color": "#43A047",
+                      "show_state": true
+                    },
+                    {
+                      "entity": "sensor.lywsd03mmc_09_temperature",
+                      "name": "Temperatur",
+                      "color": "#FB8C00",
+                      "show_state": true,
+                      "y_axis": "secondary"
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "labels_secondary": true,
+                    "extrema": false,
+                    "fill": false
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "binary_sensor.heizungsraum_sensor_kondenswasser_water_leak",
+                  "name": "Kondenswasser",
+                  "icon": "mdi:water-sync",
+                  "vertical": false
                 }
               ]
             }
