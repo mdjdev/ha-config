@@ -143,6 +143,15 @@ recorder:
 # Shell commands let Home Assistant run external scripts or commands.
 # Docs: https://www.home-assistant.io/integrations/shell_command/
 shell_command:
+  # Git commands
+  commit_ha_version: >-
+    export GIT_CONFIG_GLOBAL=/config/.gitconfig &&
+    cd /config &&
+    (git diff --quiet .HA_VERSION ||
+     (git add .HA_VERSION &&
+      git commit -m ".HA_VERSION $(cat .HA_VERSION)" &&
+      git push))
+
   # PlayBee database commands.
   playbee_db_init: "python3 /config/scripts/playbee_db.py init"
 
