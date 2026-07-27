@@ -96,9 +96,10 @@ def init_db():
     print(json.dumps({"ok": True, "action": "init"}))
 
 
-def save_resume(tag_uid, queue_id, track_id, position):
+def save_resume(tag_uid, queue_id, track_id, position, title):
     resume_data = json.dumps({
         "last_updated": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "title": title,
         "track_id": track_id,
         "position": int(float(position)),
         "queue_id": queue_id
@@ -275,8 +276,8 @@ def main():
 
     if action == "init":
         init_db()
-    elif action == "save_resume" and len(sys.argv) == 6:
-        save_resume(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
+    elif action == "save_resume" and len(sys.argv) == 7:
+        save_resume(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
     elif action == "clear_resume" and len(sys.argv) == 3:
         clear_resume(sys.argv[2])
     elif action == "get_tag_by_id" and len(sys.argv) == 3:

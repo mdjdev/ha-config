@@ -203,8 +203,9 @@ playbee_play_media_based_on_nfc_tag:
           level: warning
           logger: playbee.nfc
           message: Resume track not found in queue. tag={{ tag_uid }}, queue_id={{
-            resume_context.queue_id }}, track_id={{ resume_context.track_id }}, helper_result={{
-            queue_lookup_result.stdout }}
+            resume_context.queue_id }}, track_id={{ resume_context.track_id }}, log_file={{
+            queue_match.get('log_file', '') }}, helper_result={{ queue_lookup_result.stdout
+            }}
       - action: media_player.volume_mute
         target:
           entity_id: '{{ player_id }}'
@@ -306,7 +307,8 @@ playbee_save_resume:
           and item_id\n  else ''\n%} {{\n  {\n    'active_playlist_name': active_playlist_name,\n
           \   'is_playbee_playlist': is_playbee_playlist,\n    'db_tag_name': db_tag_name,\n
           \   'queue_id': payload.get('queue_id', ''),\n    'position': payload.get('elapsed_time',
-          0) | int(0),\n    'track_url': resume_url\n  }\n}}"
+          0) | int(0),\n    'title': current_item.get('name', ''),\n    'track_url':
+          resume_url\n  }\n}}"
         resume_candidate_is_valid: "{{\n  resume_candidate.is_playbee_playlist\n  and
           resume_candidate.db_tag_name not in ['', 'unknown', 'unavailable']\n  and
           resume_candidate.track_url | length > 0\n}}"
@@ -328,8 +330,8 @@ playbee_save_resume:
           save_request: "{{\n  {\n    'tag_found': tag_lookup.found | default(false),\n
             \   'tag_uid': tag_lookup.tag_uid | default(''),\n    'tag_name': tag_lookup.name
             | default(''),\n    'queue_id': resume_candidate.queue_id,\n    'track_url':
-            resume_candidate.track_url,\n    'position': resume_candidate.position\n
-            \ }\n}}"
+            resume_candidate.track_url,\n    'position': resume_candidate.position,\n
+            \   'title': resume_candidate.title\n  }\n}}"
           save_request_is_valid: "{{\n  save_request.tag_found\n  and save_request.tag_uid
             not in ['', 'unknown', 'unavailable']\n  and save_request.queue_id not
             in ['', 'unknown', 'unavailable']\n  and save_request.track_url not in
@@ -345,6 +347,7 @@ playbee_save_resume:
             track_id: '{{ save_request.track_url }}'
             position: '{{ save_request.position }}'
             queue_id: '{{ save_request.queue_id }}'
+            title: '{{ save_request.title }}'
         else:
         - action: system_log.write
           data:

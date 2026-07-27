@@ -71,7 +71,7 @@ Managed by `scripts/playbee_db.py`. A SQLite database with a single `tags` table
 | `shuffle_mode` | `TEXT` | `on` / `off` |
 | `repeat_mode` | `TEXT` | `off` / `one` / `all` |
 | `resume_mode` | `TEXT` | TTL string (`off`, `12h`, `24h`, `7d`, `365d`) |
-| `resume_data` | `TEXT` | JSON: `{track_id, queue_id, position, last_updated}` |
+| `resume_data` | `TEXT` | JSON: `{last_updated, title, track_id, position, queue_id}` |
 
 ### Exposed Shell Commands
 
@@ -80,7 +80,7 @@ Managed by `scripts/playbee_db.py`. A SQLite database with a single `tags` table
 | `playbee_db_init` | Create the `tags` table |
 | `playbee_db_get_tag_by_id <uid>` | Lookup tag config by UID |
 | `playbee_db_get_tag_by_name <name>` | Lookup tag by playlist name |
-| `playbee_db_save_resume <uid> <queue_id> <track_id> <position>` | Persist playback state |
+| `playbee_db_save_resume <uid> <queue_id> <track_id> <position> <title>` | Persist playback state |
 | `playbee_db_clear_resume <uid>` | Clear saved resume data |
 | `playbee_export_json` | Export all tables to JSON (hourly, 14-day retention) |
 

@@ -170,6 +170,7 @@ shell_command:
     "{{ queue_id }}"
     "{{ track_id }}"
     "{{ position }}"
+    "{{ title | default('') }}"
 
   playbee_db_clear_resume: >-
     python3 /config/scripts/playbee_db.py clear_resume

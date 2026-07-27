@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 import json
+import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib import request, error
 
 SECRETS_FILE = Path("/config/secrets.yaml")
 API_URL_KEY = "playbee_ma_api_url"
 TOKEN_KEY = "playbee_ma_token"
+LOG_DIR = "/config/playbee/logs"
 
 
 def fail(error_name, exit_code=1, **extra):
@@ -105,6 +108,7 @@ def find_item_for_track(queue_id: str, track_id: str):
         item_uri = media_item.get("uri", "")
         item_provider = media_item.get("provider", "")
         item_item_id = media_item.get("item_id", "")
+        title = media_item.get("name", "")
         queue_item_id = item.get("queue_item_id", "")
 
         item_uri_normalized = normalize(item_uri)
@@ -125,16 +129,25 @@ def find_item_for_track(queue_id: str, track_id: str):
                 "track_id": track_id,
                 "index": index,
                 "queue_item_id": queue_item_id,
-                "item_uri": item_uri
+                "item_uri": item_uri,
+                "title": title
             }))
             sys.exit(0)
+
+    os.makedirs(LOG_DIR, exist_ok=True)
+    dump_filename = f"queue_dump_{datetime.now(timezone.utc).strftime('%Y-%m-%d_%H-%M-%S')}.json"
+    dump_path = os.path.join(LOG_DIR, dump_filename)
+    with open(dump_path, "w", encoding="utf-8") as f:
+        json.dump(response, f, indent=2, ensure_ascii=False)
+        f.write("\n")
 
     print(json.dumps({
         "ok": True,
         "found": False,
         "action": "find_item_for_track",
         "queue_id": queue_id,
-        "track_id": track_id
+        "track_id": track_id,
+        "log_file": dump_path
     }))
     sys.exit(0)
 
