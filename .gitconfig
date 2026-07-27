@@ -1,0 +1,37 @@
+# Single source of truth for Git settings. Mounted to every add-on and accessible from HAOS host.
+#
+# HOW TO USE:
+#   Terminal & SSH add-on:
+#     rm /data/.gitconfig
+#     ln -sf /config/.gitconfig /root/.gitconfig
+#     git config --global --list --show-origin
+#   File Editor:
+#     Already shows /config/.gitconfig in the file tree.
+#   Automations/Scripts (HA Core):
+#     $HOME=/root does not persist across restarts, so do NOT rely on a symlink.
+#     Instead, use the GIT_CONFIG_GLOBAL environment variable:
+#       GIT_CONFIG_GLOBAL=/config/.gitconfig git -C /config pull
+#     Or set it per automation:
+#       shell_command:
+#         git_pull: "GIT_CONFIG_GLOBAL=/config/.gitconfig git -C /config pull"
+#   Note: Terminal & SSH add-on may recreate /root/.gitconfig after updates;
+#         rerun the symlink or add "ln -sf /config/.gitconfig /root/.gitconfig"
+#         to the add-on's init_commands if available.
+# Full docs: docs/GIT_CONFIGURATION.md
+#
+[init]
+    defaultBranch = main
+
+[user]
+    name = mdjdev
+    email = 18183474+mdjdev@users.noreply.github.com
+
+[core]
+    sshCommand = ssh -i /config/.ssh/id_rsa_github -o StrictHostKeyChecking=accept-new
+
+# Rewrite HTTPS remotes to SSH so that git push/pull works inside HA containers
+# (where interactive username/password prompts are impossible).
+# This only affects commands that use GIT_CONFIG_GLOBAL=/config/.gitconfig;
+# local IDE clones over Samba keep their HTTPS remote and are unaffected.
+[url "git@github.com:"]
+    insteadOf = https://github.com/

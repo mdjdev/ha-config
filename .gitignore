@@ -16,6 +16,7 @@
 
 !.gitignore
 !.gitattributes
+!.gitconfig
 !.editorconfig
 !README.md
 !LICENSE
