@@ -22,6 +22,8 @@
   actions:
   - action: script.mobile_send_notification
     data:
+      recipients:
+      - obsidian
       must_be_home: false
       message: clear_notification
       tag: '{{ trigger.entity_id }}'
@@ -289,6 +291,8 @@
         value_template: '{{ notification_delay | int == 0 }}'
       - action: script.mobile_send_notification
         data:
+          recipients:
+          - obsidian
           title: '{{ sensor_name }}'
           message: "{% if open_minutes <= 1 %}\n  1 Minute\n{% elif open_minutes <=
             180 %}\n  {{ open_minutes }} Minuten\n{% else %}\n  {{ open_minutes //
