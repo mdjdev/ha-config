@@ -28,9 +28,10 @@ logger:
   #default: info
   default: warning
 
-  logs:
-    homeassistant.components.automation: debug
+  #logs:
+    #homeassistant.components.automation: debug
     #homeassistant.components.command_line: debug
+    #homeassistant.components.shell_command: debug
 
   # filters:
   #   homeassistant:
@@ -69,7 +70,7 @@ recorder:
       - device_tracker.obsidian_mobile
       - device_tracker.pixel_9_pro_obsidian_ping
       - binary_sensor.pixel_9_pro_obsidian_ping
-      
+
       - device_tracker.pixel_9_pro_hazel
       - device_tracker.hazel_mobile
       - device_tracker.pixel_9_pro_hazel_ping
@@ -104,7 +105,7 @@ recorder:
       - binary_sensor.*water*
       - binary_sensor.*wasser*
       - binary_sensor.*moisture*
-      
+
       # PlayBee
       - binary_sensor.*playbee*
       - sensor.*playbee*
@@ -266,7 +267,7 @@ template:
           {%- else -%}
             {{ trigger.event.data['android.bluetooth.device.extra.BATTERY_LEVEL'] }}
           {%- endif -%}
-  
+
   - trigger:
       # Listen for Android intent events from the mobile app.
       - platform: event
@@ -281,7 +282,7 @@ template:
         device_class: battery
         state_class: measurement
         unit_of_measurement: "%"
-        
+
         # Keep the previous value if Android reports 0 or a negative value.
         state: >-
           {%- if trigger.event.data['android.bluetooth.device.extra.BATTERY_LEVEL'] | int <= 0 -%}
