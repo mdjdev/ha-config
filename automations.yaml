@@ -243,8 +243,8 @@
     sensor: "{% if is_state(device, 'Waschküche') %}\n  sensor.waschkuche_temperatur_und_luftfeuchtigkeitssensor_humidity\n{%
       elif is_state(device, 'Treppenhaus') %}\n  sensor.keller_treppenhaus_temperatur_und_luftfeuchtigkeitssensor_humidity\n{%
       else %}\n  ''\n{% endif %}\n"
-    switch: "{% if is_state(device, 'Waschküche') %}\n  switch.waschkuche_steckdose_luftentfeuchter_schalter\n{%
-      elif is_state(device, 'Treppenhaus') %}\n  switch.waschkuche_steckdose_luftentfeuchter_schalter\n{%
+    switch: "{% if is_state(device, 'Waschküche') %}\n  switch.waschkuche_steckdose_luftentfeuchter\n{%
+      elif is_state(device, 'Treppenhaus') %}\n  switch.waschkuche_steckdose_luftentfeuchter\n{%
       else %}\n  ''\n{% endif %}\n"
     humidity_low: 62
     humidity_high: 65
@@ -741,7 +741,7 @@
       seconds: 0
   conditions:
   - condition: state
-    entity_id: switch.waschkuche_steckdose_luftentfeuchter_schalter
+    entity_id: switch.waschkuche_steckdose_luftentfeuchter
     state: 'on'
   actions:
   - action: script.mobile_send_notification

@@ -1106,10 +1106,14 @@
                   ],
                   "card": {
                     "type": "tile",
-                    "entity": "sensor.waschkuche_steckdose_luftentfeuchter_leistung",
+                    "entity": "sensor.waschkuche_steckdose_luftentfeuchter_power",
                     "name": "Luftentfeuchter",
                     "icon": "mdi:air-humidifier",
                     "vertical": false
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
                   }
                 }
               ]
@@ -1174,7 +1178,7 @@
                   ],
                   "card": {
                     "type": "tile",
-                    "entity": "sensor.waschkuche_steckdose_luftentfeuchter_leistung",
+                    "entity": "sensor.waschkuche_steckdose_luftentfeuchter_power",
                     "name": "Luftentfeuchter",
                     "icon": "mdi:air-humidifier",
                     "vertical": false

@@ -753,12 +753,12 @@
                     "name": "Luftentfeuchter",
                     "entities": [
                       {
-                        "entity": "sensor.waschkuche_steckdose_luftentfeuchter_leistung",
+                        "entity": "sensor.waschkuche_steckdose_luftentfeuchter_power",
                         "name": "Leistung",
                         "color": "red"
                       },
                       {
-                        "entity": "sensor.waschkuche_steckdose_luftentfeuchter_summe_verbraucht",
+                        "entity": "sensor.waschkuche_steckdose_luftentfeuchter_energy",
                         "name": "Verbrauch",
                         "color": "grey",
                         "show_state": false,
@@ -785,7 +785,7 @@
                   ],
                   "card": {
                     "type": "tile",
-                    "entity": "switch.waschkuche_steckdose_luftentfeuchter_schalter",
+                    "entity": "switch.waschkuche_steckdose_luftentfeuchter",
                     "vertical": false,
                     "name": "Luftentfeuchter",
                     "features_position": "bottom"
@@ -806,7 +806,7 @@
                   ],
                   "card": {
                     "type": "tile",
-                    "entity": "sensor.waschkuche_steckdose_luftentfeuchter_leistung",
+                    "entity": "sensor.waschkuche_steckdose_luftentfeuchter_power",
                     "name": "Leistung",
                     "features_position": "bottom",
                     "vertical": false
@@ -953,12 +953,12 @@
                     "name": "Luftentfeuchter",
                     "entities": [
                       {
-                        "entity": "sensor.waschkuche_steckdose_luftentfeuchter_leistung",
+                        "entity": "sensor.waschkuche_steckdose_luftentfeuchter_power",
                         "name": "Leistung",
                         "color": "red"
                       },
                       {
-                        "entity": "sensor.waschkuche_steckdose_luftentfeuchter_summe_verbraucht",
+                        "entity": "sensor.waschkuche_steckdose_luftentfeuchter_energy",
                         "name": "Verbrauch",
                         "color": "grey",
                         "show_state": false,
@@ -985,7 +985,7 @@
                   ],
                   "card": {
                     "type": "tile",
-                    "entity": "switch.waschkuche_steckdose_luftentfeuchter_schalter",
+                    "entity": "switch.waschkuche_steckdose_luftentfeuchter",
                     "vertical": false,
                     "name": "Luftentfeuchter",
                     "features_position": "bottom"
@@ -1006,7 +1006,7 @@
                   ],
                   "card": {
                     "type": "tile",
-                    "entity": "sensor.waschkuche_steckdose_luftentfeuchter_leistung",
+                    "entity": "sensor.waschkuche_steckdose_luftentfeuchter_power",
                     "name": "Leistung",
                     "features_position": "bottom",
                     "vertical": false
