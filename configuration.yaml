@@ -110,6 +110,11 @@ recorder:
       - binary_sensor.*playbee*
       - sensor.*playbee*
       - input_text.*playbee*
+      
+      # Navimow
+      - lawn_mower.navimow_*
+      - sensor.navimow_*
+      - binary_sensor.navimow_*
 
   exclude:
     domains:
