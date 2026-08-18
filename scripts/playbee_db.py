@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import base64
 import json
 import os
 import re
@@ -16,6 +17,21 @@ def connect():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def fail_json(error, exit_code=1, action="unknown", **extra):
+    print(json.dumps({"ok": False, "action": action, "error": error, **extra},
+                     ensure_ascii=False))
+    sys.exit(exit_code)
+
+
+def _b64decode(value):
+    if not value:
+        return ""
+    try:
+        return base64.b64decode(value).decode("utf-8")
+    except Exception as err:
+        fail_json("invalid_payload", action="unknown", message=str(err))
 
 
 def validate_identifier(value):
@@ -96,7 +112,8 @@ def init_db():
     print(json.dumps({"ok": True, "action": "init"}))
 
 
-def save_resume(tag_uid, queue_id, track_id, position, title):
+def save_resume(tag_uid, queue_id, track_id, position, title_b64):
+    title = _b64decode(title_b64)
     resume_data = json.dumps({
         "last_updated": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "title": title,
@@ -162,7 +179,8 @@ def get_tag_by_id(tag_uid):
     print(json.dumps(row_to_tag_payload(row, {"tag_uid": tag_uid})))
 
 
-def get_tag_by_name(name):
+def get_tag_by_name(name_b64):
+    name = _b64decode(name_b64)
     conn = connect()
     row = conn.execute("""
         SELECT tag_uid, name, media_url, shuffle_mode, repeat_mode, resume_mode, resume_data

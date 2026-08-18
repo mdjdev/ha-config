@@ -79,10 +79,19 @@ Managed by `scripts/playbee_db.py`. A SQLite database with a single `tags` table
 |---------|---------|
 | `playbee_db_init` | Create the `tags` table |
 | `playbee_db_get_tag_by_id <uid>` | Lookup tag config by UID |
-| `playbee_db_get_tag_by_name <name>` | Lookup tag by playlist name |
-| `playbee_db_save_resume <uid> <queue_id> <track_id> <position> <title>` | Persist playback state |
+| `playbee_db_get_tag_by_name <name>` | Lookup tag by playlist name (name is base64-encoded in the shell_command template) |
+| `playbee_db_save_resume <uid> <queue_id> <track_id> <position> <title>` | Persist playback state (title is base64-encoded in the shell_command template) |
 | `playbee_db_clear_resume <uid>` | Clear saved resume data |
 | `playbee_export_json` | Export all tables to JSON (hourly, 14-day retention) |
+
+> **Free-text argument encoding:** the `playbee_db_get_tag_by_name` and `playbee_db_save_resume`
+> shell_command templates base64-encode the untrusted free-text fields (`name`/`tag_name`,
+> `title`) before they reach the Python script, because HA's `shell_command` runs the rendered
+> command through `shlex.split` — an embedded double quote in a title/playlist name would split
+> into extra argv tokens and exit 1. Callers pass the plain value as service data; the template
+> does the encoding, so script `service_data` stays human-readable in traces. The script decodes
+> (`base64.b64decode`) before use. `uid`/`queue_id`/`track_id`/`position` are passed as plain
+> quoted args.
 
 ---
 
