@@ -110,6 +110,7 @@ recorder:
       - binary_sensor.*playbee*
       - sensor.*playbee*
       - input_text.*playbee*
+      - media_player.*playbee*
       
       # Navimow
       - lawn_mower.navimow_*
