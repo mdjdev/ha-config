@@ -812,9 +812,9 @@
   - trigger: time
     at: '11:00:00'
   - trigger: time
-    at: '13:00:00'
+    at: '14:00:00'
   - trigger: time
-    at: '19:00:00'
+    at: '18:00:00'
   actions:
   - target:
       entity_id: switch.garten_bewasserung_schalter
