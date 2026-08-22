@@ -120,7 +120,7 @@ def save_resume(tag_uid, queue_id, track_id, position, title_b64):
         "track_id": track_id,
         "position": int(float(position)),
         "queue_id": queue_id
-    })
+    }, ensure_ascii=False)
     conn = connect()
     conn.execute("""
         UPDATE tags
