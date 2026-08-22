@@ -1,5 +1,9 @@
 # Project Guidelines
 
+> Workspace note: this file governs work inside the HA configuration directory and
+> takes precedence there. Workspace-level guidance (MCP usage, reports, `.ai/`,
+> `todo.txt`) lives in the repository root `AGENTS.md`.
+
 ## Architecture
 
 This is a **Home Assistant configuration** repo with several custom subsystems. `configuration.yaml` is the primary entrypoint.
