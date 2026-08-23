@@ -1442,6 +1442,238 @@
               ]
             }
           ]
+        },
+        {
+          "title": "Garten | Bewässerung",
+          "path": "garten-bewaeserung",
+          "icon": "mdi:sprinkler",
+          "type": "sections",
+          "max_columns": 4,
+          "badges": [
+            {
+              "type": "entity",
+              "entity": "binary_sensor.garten_bewasserung_valve_work_state",
+              "show_name": true,
+              "show_state": true
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.garten_bewasserung_daily_irrigation_volume",
+              "show_state": true
+            }
+          ],
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Steuerung",
+                  "icon": "mdi:valve"
+                },
+                {
+                  "type": "tile",
+                  "entity": "switch.garten_bewasserung_schalter",
+                  "name": "Ventil öffnen / schließen",
+                  "icon": "mdi:water-pump",
+                  "features": [
+                    {
+                      "type": "toggle"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "switch.garten_bewasserung_automatisches_schliessen_bei_wassermangel",
+                  "name": "Auto-Zu bei Wassermangel",
+                  "icon": "mdi:water-alert",
+                  "features": [
+                    {
+                      "type": "toggle"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.garten_bewasserung_aktueller_geratestatus",
+                  "name": "Gerätestatus",
+                  "icon": "mdi:information-outline",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Aktuelle Bewässerung",
+                  "icon": "mdi:timer-sand"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.garten_bewasserung_real_time_irrigation_duration",
+                  "name": "Dauer",
+                  "icon": "mdi:clock-outline",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.garten_bewasserung_real_time_irrigation_volume",
+                  "name": "Volumen",
+                  "icon": "mdi:water",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.garten_bewasserung_irrigation_start_time",
+                  "name": "Start",
+                  "icon": "mdi:play-circle-outline",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.garten_bewasserung_irrigation_end_time",
+                  "name": "Ende",
+                  "icon": "mdi:stop-circle-outline",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.garten_bewasserung_volumenstrom",
+                  "name": "Volumenstrom",
+                  "icon": "mdi:pipe",
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": "auto"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Statistik & Zyklus",
+                  "icon": "mdi:chart-bar"
+                },
+                {
+                  "type": "custom:mini-graph-card",
+                  "name": "Tagesvolumen · 7 Tage",
+                  "icon": "mdi:water",
+                  "hours_to_show": 168,
+                  "points_per_hour": 0.25,
+                  "line_width": 2,
+                  "entities": [
+                    {
+                      "entity": "sensor.garten_bewasserung_daily_irrigation_volume",
+                      "name": "Tagesvolumen",
+                      "color": "#039BE5",
+                      "show_state": true
+                    }
+                  ],
+                  "show": {
+                    "labels": true,
+                    "fill": true
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.garten_bewasserung_zyklische_mengenbewasserung",
+                  "name": "Zyklus · Menge",
+                  "icon": "mdi:repeat-variant",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.garten_bewasserung_zyklische_zeitbewasserung",
+                  "name": "Zyklus · Zeit",
+                  "icon": "mdi:av-timer",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Wartung",
+                  "icon": "mdi:battery-heart"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.garten_bewasserung_battery_plus",
+                  "name": "Batterie",
+                  "icon": "mdi:battery",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "binary_sensor.garten_bewasserung_battery_plus_low",
+                  "name": "Batterie schwach",
+                  "icon": "mdi:battery-alert",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.garten_bewasserung_battery_last_replaced",
+                  "name": "Letzter Wechsel",
+                  "icon": "mdi:battery-sync",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "button",
+                  "entity": "button.garten_bewasserung_battery_replaced",
+                  "name": "Batterie ersetzt",
+                  "icon": "mdi:check-circle-outline",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                }
+              ]
+            }
+          ]
         }
       ]
     }
