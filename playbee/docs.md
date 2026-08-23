@@ -108,8 +108,16 @@ All defined in `scripts.yaml`.
 5. Start playback via `music_assistant.play_media` (with `enqueue: replace`).
 6. Mark the tag as active in `input_text.playbee_active_tag_uid`.
 7. If valid resume data exists within its TTL:
+   - Reset `input_boolean.playbee_seek_in_progress` at the start of the script so every
+     scan begins clean (also bounds a stuck/restored-on flag after a crash mid-seek).
    - Look up the track in the MA queue via `playbee_queue.py`.
    - Seek to the saved position via the MA REST API (`rest_command.playbee_ma_resume`).
+   - Sets `input_boolean.playbee_seek_in_progress` for the duration of the seek
+     so `playbee_save_resume` skips until it is done. Failure handling differs:
+     **transient failures** (queue lookup fail, MA resume non-200) leave the flag set,
+     so saves stay suppressed until the next tag scan and the stored position survives;
+     **permanent failure** (track not found in queue) clears the flag, saving resumes and
+     fresh progress becomes authoritative. The success path clears the flag as before.
 
 ### `playbee_stop_media`
 
@@ -124,6 +132,12 @@ All defined in `scripts.yaml`.
 - Extracts current track URI, queue ID, elapsed position.
 - Validates it's a PlayBee-managed playlist (prefix check).
 - Resolves playlist name → tag UID → persists resume data.
+- **Seek guard:** skipped while `input_boolean.playbee_seek_in_progress` is `on`
+  (set by the play script's resume branch). The flag stays on after a *transient*
+  seek failure (queue lookup fail, MA resume non-200) — saves remain suppressed
+  until the next tag scan so the stored position survives. After a *permanent*
+  failure (track not found) or on success the flag is cleared. No catch-up save —
+  the next heartbeat or pause persists fresh data.
 
 ### `playbee_volume_change`
 
@@ -197,6 +211,9 @@ These are necessary because HA's built-in MA integration does not expose fine-gr
 Tag scanned
     │
     ▼
+Reset seek-in-progress flag (clean slate per scan)
+    │
+    ▼
 Lookup tag in DB ──────────► Not found → log warning, abort
     │
     ▼
@@ -206,6 +223,15 @@ Check resume_data:
   └─ Both yes → mute, find queue item, seek, unmute
        No     → start fresh playback
 ```
+
+Seek failure branches (flag `playbee_seek_in_progress` controls whether saves are allowed):
+
+| Failure | Flag after | Effect |
+|---|---|---|
+| Queue lookup fails (transient) | stays **on** | Saves suppressed until next tag scan; stored position survives; re-tap retries the seek |
+| MA resume non-200 (transient) | stays **on** | Same as above |
+| Track not found in queue (permanent) | cleared | Saving resumes; fresh progress overwrites stale entry |
+| Seek succeeds | cleared | Normal saving from next heartbeat/pause |
 
 Resume is written:
 - **On pause** (instant).

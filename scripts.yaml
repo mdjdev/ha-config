@@ -20,6 +20,11 @@ playbee_play_media_based_on_nfc_tag:
       description: The scanned NFC tag UID
       required: true
   sequence:
+  - alias: Reset resume save suppression
+    action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.playbee_seek_in_progress
+    note: Clean slate per scan; also bounds a stuck/restored-on flag after a crash mid-seek
   - alias: Load tag from PlayBee DB
     action: shell_command.playbee_db_get_tag_by_id
     data:
@@ -123,6 +128,11 @@ playbee_play_media_based_on_nfc_tag:
     - condition: template
       value_template: '{{ resume_should_run }}'
     then:
+    - alias: Flag resume seek in progress
+      action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.playbee_seek_in_progress
+      note: Blocks playbee_save_resume until the seek finished (next heartbeat catches up)
     - alias: Log resume request
       action: system_log.write
       data:
@@ -159,6 +169,9 @@ playbee_play_media_based_on_nfc_tag:
           entity_id: '{{ player_id }}'
         data:
           is_volume_muted: false
+      # Transient failure: leave playbee_seek_in_progress on so all saves stay
+      # suppressed until the next tag scan; stored resume position survives and
+      # re-tapping the card retries the seek.
       - stop: Queue lookup failed
     - alias: Parse queue lookup result
       variables:
@@ -196,6 +209,8 @@ playbee_play_media_based_on_nfc_tag:
             entity_id: '{{ player_id }}'
           data:
             is_volume_muted: false
+        # Transient failure (API down/hiccup): leave playbee_seek_in_progress on so
+        # saves stay suppressed until the next tag scan; re-tapping retries the seek.
         - stop: Resume request failed
       else:
       - action: system_log.write
@@ -211,6 +226,10 @@ playbee_play_media_based_on_nfc_tag:
           entity_id: '{{ player_id }}'
         data:
           is_volume_muted: false
+      - alias: Clear resume seek flag
+        action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.playbee_seek_in_progress
       - stop: Resume track not found
     - alias: Unmute after resume handling
       action: media_player.volume_mute
@@ -218,6 +237,10 @@ playbee_play_media_based_on_nfc_tag:
         entity_id: '{{ player_id }}'
       data:
         is_volume_muted: false
+    - alias: Clear resume seek flag after seek finished
+      action: input_boolean.turn_off
+      target:
+        entity_id: input_boolean.playbee_seek_in_progress
   description: ''
 playbee_stop_media:
   alias: PlayBee | Stop media
@@ -276,6 +299,20 @@ playbee_save_resume:
       playback_context: "{{\n  {\n    'is_dev_card': active_tag_uid in dev_tag_uids,\n
         \   'queue_id':\n      state_attr(player_id, 'active_queue')\n      or state_attr(player_id,
         'mass_queue_id')\n      or player_id\n  }\n}}"
+  - alias: Skip while a resume seek is in progress
+    if:
+    - condition: state
+      entity_id: input_boolean.playbee_seek_in_progress
+      state: 'on'
+      note: The play script is mid-seek; saving now would persist a pre-seek position
+    then:
+    - action: system_log.write
+      data:
+        level: debug
+        logger: playbee.nfc
+        message: 'PlayBee save_resume: skipped, resume seek in progress. reason={{
+          trigger_reason }}, active_tag_uid={{ active_tag_uid }}'
+    - stop: Resume seek in progress
   - alias: Load active queue from Music Assistant
     action: rest_command.playbee_ma_get_queue
     data:
