@@ -117,6 +117,12 @@ recorder:
       - sensor.navimow_*
       - binary_sensor.navimow_*
 
+      # Garten | Bewässerung (SONOFF Zigbee smart water valve)
+      - switch.garten_bewasserung_*
+      - sensor.garten_bewasserung_*
+      - button.garten_bewasserung_*
+      - binary_sensor.garten_bewasserung_*
+
   exclude:
     domains:
       - camera
