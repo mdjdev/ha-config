@@ -75,6 +75,8 @@ recorder:
       - device_tracker.hazel_mobile
       - device_tracker.pixel_9_pro_hazel_ping
       - binary_sensor.pixel_9_pro_hazel_ping
+      
+      - input_select.waschkueche_luftentfeuchter_standort
 
     entity_globs:
       # Room and environment sensors used in dashboards.
@@ -123,6 +125,9 @@ recorder:
       - sensor.garten_bewasserung_*
       - button.garten_bewasserung_*
       - binary_sensor.garten_bewasserung_*
+      
+      # musiCosy
+      - sensor.musicosy_*
 
   exclude:
     domains:
@@ -133,7 +138,7 @@ recorder:
 
     entity_globs:
       # Very chatty diagnostics that are usually not useful in recorder.
-      - sensor.*_verbindungsqualitat
+      # - sensor.*_verbindungsqualitat
 
       # Internal chip and board temperatures; room sensors are kept above.
       - sensor.*zigbee_chip_temperatur
