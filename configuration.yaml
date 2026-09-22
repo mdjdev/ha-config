@@ -3,16 +3,6 @@
 default_config:
 
 
-# HTTP settings for reverse proxy support and forwarded client IP handling.
-# Docs: https://www.home-assistant.io/integrations/http/
-http:
-  use_x_forwarded_for: true
-
-  trusted_proxies:
-    # Reverse proxy allowed to forward client IP information.
-    - 192.168.178.54
-
-
 # Frontend settings for themes and additional UI modules.
 # Docs: https://www.home-assistant.io/integrations/frontend/
 frontend:

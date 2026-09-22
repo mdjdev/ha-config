@@ -18,7 +18,7 @@ js_variables:
       - _ha_mcp
     system:
       - /config/dashboard
-      - /config/developer-tools
+      - /config/tools
       - _hassio_google_drive_backup
       - /history
       - /logbook
@@ -292,8 +292,8 @@ order:
       data-nested-group: "system"
 
   - new_item: true
-    item: Entwicklerwerkzeuge
-    href: /config/developer-tools
+    item: Werkzeuge
+    href: /config/tools
     icon: mdi:hammer
     hide: |
       [[[
