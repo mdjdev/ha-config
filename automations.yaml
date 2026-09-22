@@ -497,7 +497,7 @@
   variables:
     sensor1: sensor.vorratsraum_temperatur_und_luftfeuchtigkeitssensor_humidity
     sensor2: sensor.werkraum_temperatur_und_luftfeuchtigkeitssensor_humidity
-    switch: switch.vorratsraum_steckdose_luftentfeuchter_schalter
+    switch: switch.vorratsraum_steckdose_luftentfeuchter
     humidity_low: 62
     humidity_high: 64
 - id: '1750881421664'
@@ -673,7 +673,7 @@
       seconds: 0
   conditions:
   - condition: state
-    entity_id: switch.vorratsraum_steckdose_luftentfeuchter_schalter
+    entity_id: switch.vorratsraum_steckdose_luftentfeuchter
     state: 'on'
   actions:
   - action: script.mobile_send_notification
@@ -860,28 +860,6 @@
       notification_icon: mdi:watering-can-outline
   mode: single
   max: 10
-- id: '1778873511403'
-  alias: musiCosy 2 | Batterie Benachrichtigung
-  description: ''
-  triggers:
-  - trigger: time
-    at: 06:30:00
-  - trigger: time
-    at: '18:00:00'
-  conditions:
-  - condition: numeric_state
-    entity_id: sensor.musicosy_2_battery_level
-    below: 60
-  actions:
-  - action: script.mobile_send_notification
-    data:
-      recipients:
-      - obsidian
-      title: musiCosy 2
-      message: '{{ states(''sensor.musicosy_2_battery_level'') }}% verbleibend'
-      tag: '{{ this.entity_id }}'
-      notification_icon: mdi:watering-can-outline
-  mode: single
 - id: '1780944090810'
   alias: PlayBee | NFC event router
   description: ''
@@ -889,13 +867,13 @@
   - trigger: event
     event_type: tag_scanned
     event_data:
-      device_id: 5027c31bfe14b567944562578ee195bd
+      device_id: d25c9678996deace1c93c6a54c7cafb0
     id: scanned_v1
     note: Trigger when PlayBee reader v1 scans a tag
   - trigger: event
     event_type: tag_scanned
     event_data:
-      device_id: b9cdc2845d361b7c7ef05d864ad713a1
+      device_id: 63242a40a1699cbe01cefbcd3683e5a9
     id: scanned_v2
     note: Trigger when PlayBee reader v2 scans a tag
   - trigger: state
